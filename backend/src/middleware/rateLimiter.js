@@ -10,7 +10,7 @@ const loginLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in headers
   legacyHeaders: false,
-  keyGenerator: (req) => req.ip, // Limit based on IP address
+  keyGenerator: rateLimit.ipKeyGenerator,
 });
 
 module.exports = { loginLimiter };
