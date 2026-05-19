@@ -8,6 +8,9 @@ import {
   ArrowRight,
   Loader2,
   CheckCircle2,
+  Mail,
+  CircleUser,
+  KeyRound,
 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Button } from "../components/ui/button";
@@ -193,8 +196,9 @@ export default function SignUp() {
                 htmlFor="email"
                 className="text-white/50 text-[11px] font-semibold uppercase tracking-wider"
               >
-                Email
+                Email <Mail />
               </Label>
+
               <Input
                 id="email"
                 name="email"
@@ -204,7 +208,15 @@ export default function SignUp() {
                 value={form.email}
                 onChange={handleChange}
                 data-testid="input-email"
-                className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/18 focus:border-primary/50 h-11 rounded-xl"
+                className="
+                  bg-white/[0.04]
+                  border-white/8
+                  text-white
+                  placeholder:text-white/18
+                  focus:border-primary/50
+                  h-11
+                  rounded-xl
+                "
               />
             </div>
 
