@@ -441,9 +441,9 @@ export default function Home() {
                 Start for free
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <button className="hero-cta flex items-center gap-2.5 text-white/50 hover:text-white transition-colors font-medium text-sm group">
-                <div className="w-10 h-10 rounded-full border border-white/15 flex items-center justify-center group-hover:border-primary/50 transition-all bg-white/[0.04] group-hover:bg-primary/10">
-                  <Play className="w-3.5 h-3.5 ml-0.5 text-white" />
+              <button className="hero-cta flex items-center gap-2.5 text-white/50 hover:text-white transition-colors font-medium text-sm group cursor-pointer">
+                <div className="w-10 h-10 rounded-full border border-white/15 flex items-center justify-center group-hover:border-primary/50 transition-all bg-white/[0.04] group-hover:bg-primary/10 ">
+                  <Play className="w-3.5 h-3.5 ml-0.5 text-white cursor-pointer" />
                 </div>
                 Watch 90s demo
               </button>
