@@ -9,7 +9,6 @@ import {
   Loader2,
   CheckCircle2,
   Mail,
-  KeyRound,
   CircleUserRound,
 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
@@ -24,6 +23,18 @@ const PERKS = [
   "Browser access by voice from day one",
   "Unlimited public searches & research",
 ];
+
+// ── Validation helpers ──────────────────────────────────────
+const normalizeName = (v) => v.trim().replace(/\s+/g, " ");
+const isValidName = (v) => normalizeName(v).length >= 3;
+const isValidEmail = (v) =>
+  !v.trim()
+    ? false
+    : !/\s/.test(v) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const isValidPassword = (v) => v.trim().length >= 8;
+const isValidConfirmPassword = (v, password) => v.trim() === password.trim();
+
+// ── CLIENT SIDE VALIDATION ──────────────────────────────────
 
 export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,9 +54,38 @@ export default function SignUp() {
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // ── SUBMIT → SEND TO BACKEND ────────────────────────────────
+  // ── Submit ──────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const newErrors = {};
+
+    if (!isValidName(form.name)) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+    if (!isValidEmail(form.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!isValidPassword(form.password)) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+
+    if (!isValidConfirmPassword(form.confirmPassword, form.password)) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+
+    // stop submit if errors exist
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
+
+    // Block submit if anything is invalid
+
+    setIsLoading(true); // ← FIX: was missing before
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -57,10 +97,10 @@ export default function SignUp() {
           password: form.password,
         }),
       });
+      console.log(form);
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Registration failed");
 
-      // Save email for OTP page to use
       sessionStorage.setItem("browseai_pending_email", form.email);
       setLocation("/verify-otp");
     } catch (err) {
@@ -76,32 +116,6 @@ export default function SignUp() {
 
   const handleGoogle = () => {
     window.location.href = "/api/auth/google";
-  };
-
-  const normalizeName = (v) => v.trim().replace(/\s+/g, " ");
-
-  const isValidName = (v) => {
-    const val = normalizeName(v);
-    if (!val) return false;
-    return val.length >= 3;
-  };
-
-  const isValidEmail = (v) => {
-    const val = v.trim();
-    if (!val) return false;
-
-    // no spaces allowed anywhere
-    if (/\s/.test(v)) return false;
-
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-  };
-
-  const isValidPassword = (v) => {
-    return v.trim().length >= 8;
-  };
-
-  const isValidConfirmPassword = (v, password) => {
-    return v.trim() === password.trim();
   };
 
   return (
@@ -155,7 +169,6 @@ export default function SignUp() {
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-125 h-125 bg-primary/10 rounded-full blur-[140px]" />
         </div>
 
-        {/* Logo */}
         <button
           onClick={() => setLocation("/")}
           className="absolute top-6 left-6 flex items-center gap-2 text-white/45 hover:text-white transition-colors cursor-pointer"
@@ -181,7 +194,7 @@ export default function SignUp() {
             </p>
           </div>
 
-          {/* Google button */}
+          {/* Google */}
           <button
             type="button"
             onClick={handleGoogle}
@@ -222,7 +235,7 @@ export default function SignUp() {
                   className={`
         pl-10 bg-white/4 text-white h-11 rounded-xl
         ${
-          form.name && !isValidName(form.name)
+          errors.name
             ? "border-red-500 focus:border-red-500"
             : "border-white/8 focus:border-primary/50"
         }
@@ -230,10 +243,8 @@ export default function SignUp() {
                 />
               </div>
 
-              {form.name && !isValidName(form.name) && (
-                <p className="text-red-500 text-xs">
-                  Name must be at least 3 characters (no empty spaces only)
-                </p>
+              {errors.name && (
+                <p className="text-red-500 text-xs">{errors.name}</p>
               )}
             </div>
 
@@ -245,10 +256,8 @@ export default function SignUp() {
               >
                 Email
               </Label>
-
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-
                 <Input
                   id="email"
                   name="email"
@@ -256,23 +265,16 @@ export default function SignUp() {
                   placeholder="alex@gmail.com"
                   value={form.email}
                   onChange={handleChange}
-                  className={`
-        pl-10 bg-white/4 text-white h-11 rounded-xl
-        ${
-          form.email && !isValidEmail(form.email)
-            ? "border-red-500 focus:border-red-500"
-            : "border-white/8 focus:border-primary/50"
-        }
-      `}
+                  className={`pl-10 bg-white/4 text-white h-11 rounded-xl ${form.email && !isValidEmail(form.email) ? "border-red-500 focus:border-red-500" : "border-white/8 focus:border-primary/50"}`}
                 />
               </div>
-
               {form.email && !isValidEmail(form.email) && (
                 <p className="text-red-500 text-xs">
                   Invalid email (no spaces allowed)
                 </p>
               )}
             </div>
+
             {/* Password */}
             <div className="flex flex-col gap-1.5">
               <Label
@@ -281,7 +283,6 @@ export default function SignUp() {
               >
                 Password
               </Label>
-
               <div className="relative">
                 <Input
                   id="password"
@@ -290,25 +291,21 @@ export default function SignUp() {
                   placeholder="Min. 8 characters"
                   value={form.password}
                   onChange={handleChange}
-                  className={`
-                  bg-white/4 text-white h-11 rounded-xl pr-11
-                  ${
-                    form.password && !isValidPassword(form.password)
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-white/8 focus:border-primary/50"
-                  }
-                 `}
+                  className={`bg-white/4 text-white h-11 rounded-xl pr-11 ${form.password && !isValidPassword(form.password) ? "border-red-500 focus:border-red-500" : "border-white/8 focus:border-primary/50"}`}
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
-                  {showPassword ? <Eye /> : <EyeOff />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}{" "}
+                  {/* ← FIX: was swapped */}
                 </button>
               </div>
-
               {form.password && !isValidPassword(form.password) && (
                 <p className="text-red-500 text-xs">
                   Password must be at least 8 characters
@@ -324,7 +321,6 @@ export default function SignUp() {
               >
                 Confirm Password
               </Label>
-
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -333,26 +329,21 @@ export default function SignUp() {
                   placeholder="Repeat password"
                   value={form.confirmPassword}
                   onChange={handleChange}
-                  className={`
-        bg-white/4 text-white h-11 rounded-xl pr-11
-        ${
-          form.confirmPassword &&
-          !isValidConfirmPassword(form.confirmPassword, form.password)
-            ? "border-red-500 focus:border-red-500"
-            : "border-white/8 focus:border-primary/50"
-        }
-      `}
+                  className={`bg-white/4 text-white h-11 rounded-xl pr-11 ${form.confirmPassword && !isValidConfirmPassword(form.confirmPassword, form.password) ? "border-red-500 focus:border-red-500" : "border-white/8 focus:border-primary/50"}`}
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
-                  {showConfirm ? <Eye /> : <EyeOff />}
+                  {showConfirm ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}{" "}
+                  {/* ← FIX: was swapped */}
                 </button>
               </div>
-
               {form.confirmPassword &&
                 !isValidConfirmPassword(
                   form.confirmPassword,
