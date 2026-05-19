@@ -2,18 +2,18 @@ import { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/use-auth";
-import { ScrollProgress } from "@/components/scroll-progress";
-import { PageLoader } from "@/components/page-loader";
+import { Toaster } from "./components/ui/toaster";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { AuthProvider } from "./hooks/use-auth";
+import { ScrollProgress } from "./components/scroll-progress";
+import { PageLoader } from "./components/page-loader";
 
-import Home from "@/pages/home";
-import SignIn from "@/pages/sign-in";
-import SignUp from "@/pages/sign-up";
-import VerifyOtp from "@/pages/verify-otp";
-import Dashboard from "@/pages/dashboard";
-import NotFound from "@/pages/not-found";
+import Home from "./pages/home";
+import SignIn from "./pages/sign-in";
+import SignUp from "./pages/sign-up";
+import VerifyOtp from "./pages/verify-otp";
+import Dashboard from "./pages/dashboard";
+import NotFound from "./pages/not-found";
 
 const queryClient = new QueryClient();
 

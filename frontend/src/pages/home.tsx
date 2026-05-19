@@ -4,13 +4,13 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, Link } from "wouter";
-import { Button } from "@/components/ui/button";
+import { Button } from "../components/ui/button";
 import {
   GsapFadeUp,
   GsapSlideIn,
   GsapScale,
   GsapStagger,
-} from "@/components/gsap-reveal";
+} from "../components/gsap-reveal";
 import {
   Mic,
   ArrowRight,
@@ -31,7 +31,7 @@ import {
   Eye,
   Search,
 } from "lucide-react";
-import VoiceOrb from "@/components/voice-orb";
+import VoiceOrb from "../components/voice-orb";
 import girlAgent from "../assets/ai-agent-girl-nobg.png";
 import demoBrowser from "../assets/browser-demo.png";
 import demoEmail from "../assets/email-demo.png";
@@ -155,13 +155,14 @@ export default function Home() {
   const [, setLocation] = useLocation();
   const [commandIdx, setCommandIdx] = useState(0);
   const heroRef = useRef<HTMLDivElement>(null);
-  const girlRef = useRef<HTMLDivElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
 
+  // Redirect if already logged in
   useEffect(() => {
     if (token && !isLoading) setLocation("/dashboard");
   }, [token, isLoading, setLocation]);
 
+  // Rotate commands
   useEffect(() => {
     const t = setInterval(
       () => setCommandIdx((i) => (i + 1) % COMMANDS.length),
@@ -170,171 +171,157 @@ export default function Home() {
     return () => clearInterval(t);
   }, []);
 
-  // GSAP Hero entrance
+  // ── HERO GSAP ANIMATION (FIXED) ──────────────────────────────
+  // Problem was: on navigate-back, GSAP re-ran but elements were already
+  // visible from previous run. Fix: gsap.set() resets to hidden BEFORE
+  // animating, and cleanup kills all tweens on unmount.
   useEffect(() => {
     if (!heroRef.current) return;
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(() => {
-      let ctx;
-      try {
-        ctx = gsap.context(() => {
-          // Don't force opacity 0 - let elements be visible
-          const tl = gsap.timeline({ delay: 0.1 });
+    // Kill any leftover tweens/triggers from a previous mount
+    ScrollTrigger.getAll().forEach((t) => t.kill());
+    gsap.killTweensOf(
+      ".hero-word, .hero-badge, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
+    );
 
-          // Badge
-          tl.fromTo(
-            ".hero-badge",
-            { opacity: 0, y: 20 },
-            { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
-          )
-            // Headline words stagger
-            .fromTo(
-              ".hero-word",
-              { opacity: 0, y: 40, skewY: 3 },
-              {
-                opacity: 1,
-                y: 0,
-                skewY: 0,
-                duration: 0.7,
-                stagger: 0.07,
-                ease: "power3.out",
-              },
-              "-=0.3",
-            )
-            // Sub copy
-            .fromTo(
-              ".hero-sub",
-              { opacity: 0, y: 20 },
-              { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
-              "-=0.4",
-            )
-            // CTAs
-            .fromTo(
-              ".hero-cta",
-              { opacity: 0, y: 16 },
-              {
-                opacity: 1,
-                y: 0,
-                duration: 0.5,
-                stagger: 0.1,
-                ease: "power3.out",
-              },
-              "-=0.3",
-            )
-            // Command bar
-            .fromTo(
-              ".hero-bar",
-              { opacity: 0, y: 20, scale: 0.97 },
-              {
-                opacity: 1,
-                y: 0,
-                scale: 1,
-                duration: 0.6,
-                ease: "back.out(1.3)",
-              },
-              "-=0.2",
-            )
-            // Trust badges
-            .fromTo(
-              ".hero-trust",
-              { opacity: 0 },
-              { opacity: 1, duration: 0.5 },
-              "-=0.2",
-            );
+    // Force reset to hidden — this is the critical fix
+    gsap.set(".hero-word", { opacity: 0, y: 60, skewY: 6 });
+    gsap.set(".hero-badge", { opacity: 0, y: 25 });
+    gsap.set(".hero-sub", { opacity: 0, y: 30 });
+    gsap.set(".hero-cta", { opacity: 0, y: 25 });
+    gsap.set(".hero-bar", { opacity: 0, y: 35, scale: 0.92 });
+    gsap.set(".hero-trust", { opacity: 0, y: 20 });
 
-          // Girl parallax on scroll
-          gsap.to(girlRef.current, {
-            yPercent: -12,
-            ease: "none",
-            scrollTrigger: {
-              trigger: heroRef.current,
-              start: "top top",
-              end: "bottom top",
-              scrub: true,
+    let ctx: gsap.Context;
+
+    const runAnimation = () => {
+      ctx = gsap.context(() => {
+        const tl = gsap.timeline({ delay: 0.1 });
+
+        tl.to(".hero-badge", {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power3.out",
+        })
+          .to(
+            ".hero-word",
+            {
+              opacity: 1,
+              y: 0,
+              skewY: 0,
+              duration: 0.85,
+              stagger: 0.09,
+              ease: "power3.out",
             },
-          });
-
-          // Floating cards parallax
-          gsap.to(".hero-float-card", {
-            y: -30,
-            ease: "none",
-            stagger: 0.05,
-            scrollTrigger: {
-              trigger: heroRef.current,
-              start: "top top",
-              end: "bottom top",
-              scrub: 1.5,
-            },
-          });
-        }, heroRef);
-      } catch (e) {
-        // If GSAP fails, make sure hero elements are visible
-        document
-          .querySelectorAll(
-            ".hero-badge, .hero-word, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
+            "-=0.35",
           )
-          .forEach((el) => {
-            (el as HTMLElement).style.opacity = "1";
-          });
-      }
+          .to(
+            ".hero-sub",
+            { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+            "-=0.4",
+          )
+          .to(
+            ".hero-cta",
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.6,
+              stagger: 0.12,
+              ease: "power3.out",
+            },
+            "-=0.4",
+          )
+          .to(
+            ".hero-bar",
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.8,
+              ease: "back.out(1.4)",
+            },
+            "-=0.3",
+          )
+          .to(".hero-trust", { opacity: 1, y: 0, duration: 0.6 }, "-=0.3");
+      }, heroRef.current);
+    };
 
-      return () => {
-        if (ctx) ctx.revert();
-        ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-      };
-    }, 100);
+    const timeoutId = setTimeout(runAnimation, 100);
 
     return () => {
-      clearTimeout(timer);
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      clearTimeout(timeoutId);
+      if (ctx) ctx.revert();
+      // Kill on unmount so next mount starts clean
+      gsap.killTweensOf(
+        ".hero-word, .hero-badge, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
+      );
     };
+  }, []); // empty — runs once per mount, cleanup handles the rest
+
+  // ── STAT COUNTERS ────────────────────────────────────────────
+  // ── ADD THIS useEffect right after your existing hero useEffect ──
+  // It forces ScrollTrigger to recalculate all positions after
+  // navigation causes the page to re-mount at a stale scroll state
+
+  useEffect(() => {
+    // Small delay lets the DOM fully paint before ScrollTrigger measures
+    const id = setTimeout(() => {
+      ScrollTrigger.refresh(true); // true = force recalculate all triggers
+    }, 200);
+
+    return () => clearTimeout(id);
   }, []);
 
-  // GSAP stat counters
+  // ── ALSO fix your stat counter useEffect — replace it with this ──
   useEffect(() => {
     const triggers: ScrollTrigger[] = [];
 
-    const ctx = gsap.context(() => {
-      document.querySelectorAll(".stat-number").forEach((el, i) => {
-        const stat = STATS[i];
-        const obj = { val: 0 };
+    // Wait for ScrollTrigger.refresh() above to complete first
+    const id = setTimeout(() => {
+      const ctx = gsap.context(() => {
+        document.querySelectorAll(".stat-number").forEach((el, i) => {
+          const stat = STATS[i];
+          const obj = { val: 0 };
 
-        const formatValue = (val: number) => {
-          if (stat.value < 5) {
-            return Math.floor(val).toString();
-          }
-          return Math.round(val).toLocaleString();
-        };
+          // Reset text to dash in case of stale value from prev mount
+          (el as HTMLElement).textContent = "—";
 
-        const trigger = ScrollTrigger.create({
-          trigger: el,
-          start: "top 85%",
-          once: true,
-          onEnter: () => {
-            gsap.to(obj, {
-              val: stat.value,
-              duration: 2,
-              delay: i * 0.15,
-              ease: "power2.out",
-              onUpdate: () => {
-                (el as HTMLElement).textContent =
-                  formatValue(obj.val) + stat.suffix;
-              },
-              onComplete: () => {
-                (el as HTMLElement).textContent = stat.value + stat.suffix;
-              },
-            });
-          },
+          const trigger = ScrollTrigger.create({
+            trigger: el,
+            start: "top 85%",
+            once: true,
+            onEnter: () => {
+              gsap.to(obj, {
+                val: stat.value,
+                duration: 2,
+                delay: i * 0.15,
+                ease: "power2.out",
+                onUpdate: () => {
+                  (el as HTMLElement).textContent =
+                    (stat.value < 5
+                      ? Math.floor(obj.val)
+                      : Math.round(obj.val).toLocaleString()) + stat.suffix;
+                },
+                onComplete: () => {
+                  (el as HTMLElement).textContent = stat.value + stat.suffix;
+                },
+              });
+            },
+          });
+          triggers.push(trigger);
         });
-
-        triggers.push(trigger);
       });
-    });
+
+      return () => {
+        triggers.forEach((t) => t.kill());
+        ctx.revert();
+      };
+    }, 250); // slightly after the refresh() above
 
     return () => {
-      triggers.forEach((trigger) => trigger.kill());
-      ctx.revert();
+      clearTimeout(id);
+      triggers.forEach((t) => t.kill());
     };
   }, []);
 
@@ -362,30 +349,22 @@ export default function Home() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setLocation("/sign-in")}
-            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
-          >
-            Log in
-          </button>
-          <Button
-            onClick={() => setLocation("/sign-up")}
-            className="rounded-full bg-primary hover:bg-primary/90 text-white text-sm px-5 h-9 shadow-lg shadow-primary/25 font-semibold"
-          >
-            Get started free
-          </Button>
-        </div>
+        <Button
+          onClick={() => setLocation("/sign-in")}
+          className="rounded-full bg-primary hover:bg-primary/90 text-white text-sm px-5 h-9 shadow-lg shadow-primary/25 font-semibold"
+        >
+          Get started free
+        </Button>
       </nav>
 
-      {/* ═══════════════════════════════════════════════
+      {/* ══════════════════════════════════════
           HERO
-      ═══════════════════════════════════════════════ */}
+      ══════════════════════════════════════ */}
       <section
         ref={heroRef}
         className="relative min-h-screen flex items-center pt-20 overflow-hidden"
       >
-        {/* Ambient */}
+        {/* Ambient background */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 right-0 w-[900px] h-[900px] bg-primary/14 rounded-full blur-[280px] translate-x-1/4 -translate-y-1/4" />
           <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-accent/8 rounded-full blur-[200px] -translate-x-1/4" />
@@ -400,8 +379,9 @@ export default function Home() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 md:px-14 w-full grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-8 items-center py-16 lg:py-24">
-          {/* Left: copy */}
+          {/* ── Left: copy ── */}
           <div className="relative z-10 flex flex-col">
+            {/* Badge */}
             <div className="hero-badge inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full border border-primary/25 bg-primary/8 text-primary mb-7">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
@@ -412,9 +392,10 @@ export default function Home() {
               </span>
             </div>
 
+            {/* Headline — hero-word spans are what GSAP animates */}
             <h1
               ref={headlineRef}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-[72px] font-black tracking-tight leading-[1.03] mb-6 overflow-hidden"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-[72px] font-black tracking-tight leading-[1.03] mb-6"
             >
               {["Your browser,", "commanded", "by voice."].map((line, li) => (
                 <div key={li} className="overflow-hidden">
@@ -438,18 +419,23 @@ export default function Home() {
               without touching the keyboard.
             </p>
 
+            {/* Feature pills */}
             <div className="grid gap-3 sm:grid-cols-3 mb-10">
-              <div className="hero-cta rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
-                Voice-first automation
-              </div>
-              <div className="hero-cta rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
-                Live browser control
-              </div>
-              <div className="hero-cta rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
-                Instant task results
-              </div>
+              {[
+                "Voice-first automation",
+                "Live browser control",
+                "Instant task results",
+              ].map((t) => (
+                <div
+                  key={t}
+                  className="hero-cta rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75"
+                >
+                  {t}
+                </div>
+              ))}
             </div>
 
+            {/* CTA buttons */}
             <div className="flex flex-wrap items-center gap-4 mb-12">
               <Button
                 size="lg"
@@ -504,6 +490,7 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Trust badges */}
             <div className="hero-trust flex items-center gap-6 mt-8 text-xs text-white/25">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Free forever plan
@@ -517,13 +504,12 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right: Girl agent (responsive) */}
-          <div className="relative flex items-center justify-center w-full max-w-full lg:max-w-none mx-auto min-h-[420px]">
-            {/* Glow halo */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-72 h-72 md:w-80 md:h-80 bg-primary/25 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-40 md:w-48 md:h-48 bg-accent/20 rounded-full blur-[60px]" />
+          {/* ── Right: Girl agent ── */}
+          <div className="relative flex items-center justify-center w-full mx-auto min-h-[420px]">
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-primary/25 rounded-full blur-[100px]" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-40 bg-accent/20 rounded-full blur-[60px]" />
 
-            {/* Floating status cards */}
+            {/* Floating cards */}
             <motion.div
               animate={{ y: [-5, 5, -5] }}
               transition={{
@@ -531,7 +517,7 @@ export default function Home() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="hero-float-card absolute top-6 left-1/2 -translate-x-1/2 sm:left-10 sm:translate-x-0 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
+              className="absolute top-6 left-1/2 -translate-x-1/2 sm:left-10 sm:translate-x-0 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
             >
               <p className="text-xs text-white/40 mb-0.5">Task completed</p>
               <p className="text-sm font-bold text-white">
@@ -552,7 +538,7 @@ export default function Home() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="hero-float-card absolute top-1/4 right-1/2 translate-x-1/2 sm:right-4 sm:translate-x-0 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
+              className="absolute top-1/4 right-1/2 translate-x-1/2 sm:right-4 sm:translate-x-0 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
             >
               <p className="text-xs text-white/40 mb-1">Now browsing</p>
               <div className="flex items-center gap-2">
@@ -569,7 +555,7 @@ export default function Home() {
             <motion.div
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="hero-float-card absolute bottom-20 left-1/2 -translate-x-1/2 sm:left-8 sm:translate-x-0 glass-panel px-3.5 py-3 rounded-2xl z-20 border-white/10"
+              className="absolute bottom-20 left-1/2 -translate-x-1/2 sm:left-8 sm:translate-x-0 glass-panel px-3.5 py-3 rounded-2xl z-20 border-white/10"
             >
               <div className="flex items-center gap-2.5">
                 <div className="flex items-end gap-0.5 h-5">
@@ -600,7 +586,7 @@ export default function Home() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="hero-float-card absolute top-6 right-1/2 translate-x-1/2 sm:right-2 sm:translate-x-0 glass-panel px-3 py-2 rounded-xl z-20 border-white/10"
+              className="absolute top-6 right-1/2 translate-x-1/2 sm:right-2 sm:translate-x-0 glass-panel px-3 py-2 rounded-xl z-20 border-white/10"
             >
               <div className="flex items-center gap-2">
                 <Search className="w-3.5 h-3.5 text-primary" />
@@ -610,7 +596,6 @@ export default function Home() {
 
             {/* Girl image */}
             <div
-              ref={girlRef}
               className="relative z-10 flex items-end justify-center w-full max-w-[320px] sm:max-w-[380px] md:max-w-[520px]"
               style={{ minHeight: 420 }}
             >
@@ -624,12 +609,12 @@ export default function Home() {
                 }}
                 draggable={false}
               />
-              {/* Ground glow line */}
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-56 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             </div>
           </div>
         </div>
 
+        {/* Scroll indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -648,9 +633,9 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
+      {/* ══════════════════════════════════════
           STATS BAR
-      ═══════════════════════════════════════════════ */}
+      ══════════════════════════════════════ */}
       <section className="border-y border-white/[0.06] bg-white/[0.015] py-14 px-4">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {STATS.map((s, i) => (
@@ -664,14 +649,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
-          HOW IT WORKS — VISUAL DEMO
-      ═══════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════
+          HOW IT WORKS
+      ══════════════════════════════════════ */}
       <section className="py-28 px-4 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[600px] bg-primary/5 rounded-full blur-[250px]" />
         </div>
-
         <div className="max-w-7xl mx-auto relative z-10">
           <GsapFadeUp className="text-center mb-20">
             <span className="text-xs font-semibold uppercase tracking-widest text-primary mb-4 block">
@@ -684,33 +668,28 @@ export default function Home() {
             </h2>
             <p className="text-white/35 text-base max-w-2xl mx-auto mt-4">
               Watch BrowseAI handle complex multi-step tasks from a single
-              spoken sentence. No prompts. No templates. Just natural language.
+              spoken sentence.
             </p>
           </GsapFadeUp>
 
-          {/* Step cards with images */}
           <div className="flex flex-col gap-24">
             {HOW_STEPS.map((step, i) => (
               <div
                 key={step.number}
                 className={`grid lg:grid-cols-2 gap-12 items-center ${i % 2 === 1 ? "lg:[direction:rtl]" : ""}`}
               >
-                {/* Image side */}
                 <GsapSlideIn
                   direction={i % 2 === 0 ? "left" : "right"}
                   className="[direction:ltr]"
                 >
                   <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50 group">
                     <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent z-10 pointer-events-none" />
-
                     <img
                       src={step.image}
                       alt={step.tag}
                       className="w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
-
-                    {/* Overlay badge */}
-                    <div className="absolute bottom-5 left-5 z-20 flex items-center gap-3">
+                    <div className="absolute bottom-5 left-5 z-20">
                       <div className="flex items-center gap-2 glass-panel px-3 py-2 rounded-xl border-white/10">
                         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                         <span className="text-xs font-semibold text-white">
@@ -718,15 +697,12 @@ export default function Home() {
                         </span>
                       </div>
                     </div>
-
-                    {/* Step number watermark */}
                     <div className="absolute top-4 right-4 z-20 text-[64px] font-black text-white/[0.07] leading-none select-none">
                       {step.number}
                     </div>
                   </div>
                 </GsapSlideIn>
 
-                {/* Copy side */}
                 <GsapSlideIn
                   direction={i % 2 === 0 ? "right" : "left"}
                   delay={0.1}
@@ -740,23 +716,18 @@ export default function Home() {
                       Step {step.number}
                     </span>
                   </div>
-
                   <h3 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight leading-tight">
                     {step.title}
                   </h3>
                   <p className="text-white/40 text-base leading-relaxed mb-6">
                     {step.desc}
                   </p>
-
-                  {/* Detail pill */}
                   <div className="flex items-start gap-3 glass-panel rounded-2xl p-4 border-white/8 max-w-sm">
                     <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     <p className="text-white/55 text-sm leading-relaxed">
                       {step.detail}
                     </p>
                   </div>
-
-                  {/* Connector arrow to next step */}
                   {i < HOW_STEPS.length - 1 && (
                     <div className="flex items-center gap-2 mt-8 text-white/20 text-xs">
                       <div className="flex gap-1">
@@ -776,7 +747,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Full-width demo panel */}
           <GsapScale className="mt-24" delay={0.05}>
             <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-black/50">
               <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/30 to-transparent z-10 pointer-events-none" />
@@ -804,12 +774,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
+      {/* ══════════════════════════════════════
           WHAT GENERIC AI CAN'T DO
-      ═══════════════════════════════════════════════ */}
+      ══════════════════════════════════════ */}
       <section className="py-24 px-4 border-t border-white/[0.06] relative overflow-hidden">
         <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-primary/6 rounded-full blur-[200px] pointer-events-none" />
-
         <div className="max-w-7xl mx-auto relative z-10">
           <GsapFadeUp className="text-center mb-16">
             <span className="text-xs font-semibold uppercase tracking-widest text-primary mb-4 block">
@@ -862,9 +831,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
+      {/* ══════════════════════════════════════
           TESTIMONIALS
-      ═══════════════════════════════════════════════ */}
+      ══════════════════════════════════════ */}
       <section className="py-24 px-4 border-t border-white/[0.06]">
         <div className="max-w-6xl mx-auto">
           <GsapFadeUp className="text-center mb-16">
@@ -909,9 +878,9 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════
+      {/* ══════════════════════════════════════
           CTA
-      ═══════════════════════════════════════════════ */}
+      ══════════════════════════════════════ */}
       <section className="py-28 px-4 border-t border-white/[0.06] relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] bg-primary/8 rounded-full blur-[250px]" />
@@ -962,9 +931,9 @@ export default function Home() {
         </GsapScale>
       </section>
 
-      {/* ═══════════════════════════════════════════════
+      {/* ══════════════════════════════════════
           FOOTER
-      ═══════════════════════════════════════════════ */}
+      ══════════════════════════════════════ */}
       <footer className="border-t border-white/[0.06] bg-white/[0.01]">
         <div className="max-w-7xl mx-auto px-6 md:px-14 py-16">
           <GsapFadeUp>

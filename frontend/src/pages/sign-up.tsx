@@ -10,10 +10,10 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { useToast } from "../hooks/use-toast";
 import girlAgent from "../assets/ai-agent-girl-nobg.png";
 
 const PERKS = [
@@ -199,7 +199,7 @@ export default function SignUp() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="alex@gmail.com"
                 autoComplete="email"
                 value={form.email}
                 onChange={handleChange}
