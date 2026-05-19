@@ -154,8 +154,8 @@ export default function Home() {
   const { token, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [commandIdx, setCommandIdx] = useState(0);
-  const heroRef = useRef<HTMLDivElement>(null);
-  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const heroRef = useRef(null);
+  const headlineRef = useRef(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -285,7 +285,7 @@ export default function Home() {
           const obj = { val: 0 };
 
           // Reset text to dash in case of stale value from prev mount
-          (el as HTMLElement).textContent = "—";
+          (el).textContent = "—";
 
           const trigger = ScrollTrigger.create({
             trigger: el,
@@ -298,13 +298,13 @@ export default function Home() {
                 delay: i * 0.15,
                 ease: "power2.out",
                 onUpdate: () => {
-                  (el as HTMLElement).textContent =
+                  (el).textContent =
                     (stat.value < 5
                       ? Math.floor(obj.val)
                       : Math.round(obj.val).toLocaleString()) + stat.suffix;
                 },
                 onComplete: () => {
-                  (el as HTMLElement).textContent = stat.value + stat.suffix;
+                  (el).textContent = stat.value + stat.suffix;
                 },
               });
             },

@@ -18,10 +18,10 @@ export default function SignIn() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+  const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
@@ -34,7 +34,7 @@ export default function SignIn() {
       if (!res.ok) throw new Error(json.message || "Login failed");
       login(json.token);
       setLocation("/dashboard");
-    } catch (err: unknown) {
+    } catch (err) {
       toast({
         title: "Login failed",
         description:

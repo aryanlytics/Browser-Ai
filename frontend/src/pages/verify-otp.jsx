@@ -45,7 +45,7 @@ export default function VerifyOtp() {
       sessionStorage.removeItem("browseai_pending_email");
       login(json.token);
       setLocation("/dashboard");
-    } catch (err: unknown) {
+    } catch (err) {
       toast({
         title: "Verification failed",
         description: err instanceof Error ? err.message : "Invalid or expired code",
@@ -68,7 +68,7 @@ export default function VerifyOtp() {
       if (!res.ok) throw new Error(json.message || "Failed to resend");
       toast({ title: "New code sent", description: "Check your inbox." });
       setResendCountdown(60);
-    } catch (err: unknown) {
+    } catch (err) {
       toast({
         title: "Could not resend",
         description: err instanceof Error ? err.message : "Try again shortly",

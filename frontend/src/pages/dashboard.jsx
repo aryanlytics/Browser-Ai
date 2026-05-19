@@ -10,16 +10,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import VoiceOrb from "@/components/voice-orb";
 
-type AgentState = "idle" | "listening" | "thinking" | "speaking";
-
-interface TaskEntry {
-  id: string;
-  type: "search" | "email" | "browse" | "research";
-  label: string;
-  time: string;
-  status: "done" | "running" | "pending";
-}
-
 const MOCK_TASKS: TaskEntry[] = [
   { id: "1", type: "research", label: "Researched history of quantum computing", time: "2 min ago", status: "done" },
   { id: "2", type: "search", label: "Searched YouTube for React tutorials", time: "8 min ago", status: "done" },
