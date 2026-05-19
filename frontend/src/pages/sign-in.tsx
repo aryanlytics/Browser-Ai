@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { Mic, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Button } from "@/components/ui/button";
@@ -105,8 +105,8 @@ export default function SignIn() {
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px]" />
         </div>
 
-        <Link
-          href="/"
+        <button
+          onClick={() => setLocation("/")}
           className="absolute top-6 left-6 flex items-center gap-2 text-white/45 hover:text-white transition-colors"
           data-testid="link-back-home"
         >
@@ -114,7 +114,7 @@ export default function SignIn() {
             <Mic className="w-3.5 h-3.5 text-primary" />
           </div>
           <span className="text-sm font-semibold">BrowseAI</span>
-        </Link>
+        </button>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -235,13 +235,13 @@ export default function SignIn() {
 
           <p className="text-center mt-6 text-sm text-white/28">
             No account yet?{" "}
-            <Link
-              href="/sign-up"
-              className="text-primary hover:text-primary/70 font-semibold transition-colors"
+            <button
+              onClick={() => setLocation("/sign-up")}
+              className="text-primary hover:text-primary/70 font-semibold transition-colors cursor-pointer"
               data-testid="link-sign-up"
             >
               Sign up free
-            </Link>
+            </button>
           </p>
         </motion.div>
       </div>

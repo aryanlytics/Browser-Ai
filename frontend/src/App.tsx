@@ -18,22 +18,24 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient();
 
 const pageVariants = {
-  initial: { opacity: 0, y: 12, filter: "blur(4px)" },
+  initial: { opacity: 0.95 },
   animate: {
-    opacity: 1, y: 0, filter: "blur(0px)",
-    transition: { duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] },
-  },
-  exit: {
-    opacity: 0, y: -8, filter: "blur(3px)",
-    transition: { duration: 0.28, ease: [0.55, 0, 1, 0.45] },
+    opacity: 1,
+    transition: { duration: 0.15, ease: "easeOut" },
   },
 };
 
 function AnimatedRoutes() {
   const [location] = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <motion.div key={location} variants={pageVariants} initial="initial" animate="animate" exit="exit" style={{ minHeight: "100vh" }}>
+    <AnimatePresence>
+      <motion.div
+        key={location}
+        variants={pageVariants}
+        initial="initial"
+        animate="animate"
+        style={{ minHeight: "100vh" }}
+      >
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/sign-in" component={SignIn} />
@@ -73,7 +75,9 @@ function App() {
             <PageLoader onComplete={() => setLoaderDone(true)} />
           )}
           <ScrollProgress />
-          <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
+          <WouterRouter
+            base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}
+          >
             <AnimatedRoutes />
           </WouterRouter>
           <Toaster />

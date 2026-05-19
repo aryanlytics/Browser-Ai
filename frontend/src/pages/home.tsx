@@ -173,85 +173,113 @@ export default function Home() {
   // GSAP Hero entrance
   useEffect(() => {
     if (!heroRef.current) return;
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ delay: 0.1 });
-
-      // Badge
-      tl.fromTo(
-        ".hero-badge",
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
-      )
-        // Headline words stagger
-        .fromTo(
-          ".hero-word",
-          { opacity: 0, y: 40, skewY: 3 },
-          {
-            opacity: 1,
-            y: 0,
-            skewY: 0,
-            duration: 0.7,
-            stagger: 0.07,
-            ease: "power3.out",
-          },
-          "-=0.3",
-        )
-        // Sub copy
-        .fromTo(
-          ".hero-sub",
+    let ctx;
+    try {
+      ctx = gsap.context(() => {
+        // Ensure initial hidden state so animations always run
+        gsap.set(
+          ".hero-badge, .hero-word, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
           { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
-          "-=0.4",
-        )
-        // CTAs
-        .fromTo(
-          ".hero-cta",
-          { opacity: 0, y: 16 },
-          { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "power3.out" },
-          "-=0.3",
-        )
-        // Command bar
-        .fromTo(
-          ".hero-bar",
-          { opacity: 0, y: 20, scale: 0.97 },
-          { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "back.out(1.3)" },
-          "-=0.2",
-        )
-        // Trust badges
-        .fromTo(
-          ".hero-trust",
-          { opacity: 0 },
-          { opacity: 1, duration: 0.5 },
-          "-=0.2",
         );
 
-      // Girl parallax on scroll
-      gsap.to(girlRef.current, {
-        yPercent: -12,
-        ease: "none",
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: true,
-        },
-      });
+        const tl = gsap.timeline({ delay: 0.1 });
 
-      // Floating cards parallax
-      gsap.to(".hero-float-card", {
-        y: -30,
-        ease: "none",
-        stagger: 0.05,
-        scrollTrigger: {
-          trigger: heroRef.current,
-          start: "top top",
-          end: "bottom top",
-          scrub: 1.5,
-        },
-      });
-    }, heroRef);
+        // Badge
+        tl.fromTo(
+          ".hero-badge",
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+        )
+          // Headline words stagger
+          .fromTo(
+            ".hero-word",
+            { opacity: 0, y: 40, skewY: 3 },
+            {
+              opacity: 1,
+              y: 0,
+              skewY: 0,
+              duration: 0.7,
+              stagger: 0.07,
+              ease: "power3.out",
+            },
+            "-=0.3",
+          )
+          // Sub copy
+          .fromTo(
+            ".hero-sub",
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+            "-=0.4",
+          )
+          // CTAs
+          .fromTo(
+            ".hero-cta",
+            { opacity: 0, y: 16 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.5,
+              stagger: 0.1,
+              ease: "power3.out",
+            },
+            "-=0.3",
+          )
+          // Command bar
+          .fromTo(
+            ".hero-bar",
+            { opacity: 0, y: 20, scale: 0.97 },
+            {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              duration: 0.6,
+              ease: "back.out(1.3)",
+            },
+            "-=0.2",
+          )
+          // Trust badges
+          .fromTo(
+            ".hero-trust",
+            { opacity: 0 },
+            { opacity: 1, duration: 0.5 },
+            "-=0.2",
+          );
 
-    return () => ctx.revert();
+        // Girl parallax on scroll
+        gsap.to(girlRef.current, {
+          yPercent: -12,
+          ease: "none",
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: true,
+          },
+        });
+
+        // Floating cards parallax
+        gsap.to(".hero-float-card", {
+          y: -30,
+          ease: "none",
+          stagger: 0.05,
+          scrollTrigger: {
+            trigger: heroRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: 1.5,
+          },
+        });
+      }, heroRef);
+    } catch (e) {
+      // If GSAP fails, make sure hero elements are visible
+      document
+        .querySelectorAll(
+          ".hero-badge, .hero-word, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
+        )
+        .forEach((el) => el.classList.remove("opacity-0"));
+    }
+
+    return () => ctx?.revert?.();
   }, []);
 
   // GSAP stat counters
@@ -260,6 +288,14 @@ export default function Home() {
       document.querySelectorAll(".stat-number").forEach((el, i) => {
         const stat = STATS[i];
         const obj = { val: 0 };
+
+        const formatValue = (val: number) => {
+          if (stat.value < 5) {
+            return Math.floor(val).toString();
+          }
+          return Math.round(val).toLocaleString();
+        };
+
         ScrollTrigger.create({
           trigger: el,
           start: "top 85%",
@@ -267,14 +303,15 @@ export default function Home() {
           onEnter: () => {
             gsap.to(obj, {
               val: stat.value,
-              duration: 1.8,
-              delay: i * 0.12,
+              duration: 2,
+              delay: i * 0.15,
               ease: "power2.out",
               onUpdate: () => {
                 (el as HTMLElement).textContent =
-                  (stat.value < 5
-                    ? obj.val.toFixed(0)
-                    : Math.round(obj.val).toLocaleString()) + stat.suffix;
+                  formatValue(obj.val) + stat.suffix;
+              },
+              onComplete: () => {
+                (el as HTMLElement).textContent = stat.value + stat.suffix;
               },
             });
           },
@@ -309,16 +346,18 @@ export default function Home() {
           ))}
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/sign-in">
-            <button className="text-sm font-medium text-white/55 hover:text-white transition-colors">
-              Log in
-            </button>
-          </Link>
-          <Link href="/sign-up">
-            <Button className="rounded-full bg-primary hover:bg-primary/90 text-white text-sm px-5 h-9 shadow-lg shadow-primary/25 font-semibold">
-              Get started free
-            </Button>
-          </Link>
+          <button
+            onClick={() => setLocation("/sign-in")}
+            className="text-sm font-medium text-white/55 hover:text-white transition-colors"
+          >
+            Log in
+          </button>
+          <Button
+            onClick={() => setLocation("/sign-up")}
+            className="rounded-full bg-primary hover:bg-primary/90 text-white text-sm px-5 h-9 shadow-lg shadow-primary/25 font-semibold"
+          >
+            Get started free
+          </Button>
         </div>
       </nav>
 
@@ -343,10 +382,10 @@ export default function Home() {
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 md:px-14 w-full grid lg:grid-cols-[1fr_480px] gap-8 items-center py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-6 md:px-14 w-full grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-8 items-center py-16 lg:py-24">
           {/* Left: copy */}
           <div className="relative z-10 flex flex-col">
-            <div className="hero-badge inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full border border-primary/25 bg-primary/8 text-primary mb-7 opacity-0">
+            <div className="hero-badge inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full border border-primary/25 bg-primary/8 text-primary mb-7">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
                 <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
@@ -363,7 +402,7 @@ export default function Home() {
               {["Your browser,", "commanded", "by voice."].map((line, li) => (
                 <div key={li} className="overflow-hidden">
                   <span
-                    className={`hero-word block opacity-0 ${li === 1 ? "text-gradient" : "text-white"}`}
+                    className={`hero-word block ${li === 1 ? "text-gradient" : "text-white"}`}
                   >
                     {line}
                   </span>
@@ -371,40 +410,39 @@ export default function Home() {
               ))}
             </h1>
 
-            <p className="hero-sub opacity-0 text-base md:text-lg text-white/45 max-w-lg mb-6 leading-relaxed">
+            <p className="hero-sub text-base md:text-lg text-white/45 max-w-lg mb-6 leading-relaxed">
               BrowseAI is your AI co-pilot that watches your screen, navigates
               the web, writes emails, and executes real tasks — through your
               voice alone.
             </p>
-            <p className="hero-sub opacity-0 text-sm md:text-base text-white/55 max-w-lg mb-10 leading-relaxed">
+            <p className="hero-sub text-sm md:text-base text-white/55 max-w-lg mb-10 leading-relaxed">
               Turn a single spoken instruction into a completed workflow:
               research fast, book meetings, fill forms, and summarize content
               without touching the keyboard.
             </p>
 
             <div className="grid gap-3 sm:grid-cols-3 mb-10">
-              <div className="hero-cta opacity-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
+              <div className="hero-cta rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
                 Voice-first automation
               </div>
-              <div className="hero-cta opacity-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
+              <div className="hero-cta rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
                 Live browser control
               </div>
-              <div className="hero-cta opacity-0 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
+              <div className="hero-cta rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75">
                 Instant task results
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 mb-12">
-              <Link href="/sign-up">
-                <Button
-                  size="lg"
-                  className="hero-cta opacity-0 h-12 px-8 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-base gap-2 shadow-2xl shadow-primary/30 group"
-                >
-                  Start for free
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <button className="hero-cta opacity-0 flex items-center gap-2.5 text-white/50 hover:text-white transition-colors font-medium text-sm group">
+              <Button
+                size="lg"
+                onClick={() => setLocation("/sign-up")}
+                className="hero-cta h-12 px-8 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-base gap-2 shadow-2xl shadow-primary/30 group"
+              >
+                Start for free
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+              <button className="hero-cta flex items-center gap-2.5 text-white/50 hover:text-white transition-colors font-medium text-sm group">
                 <div className="w-10 h-10 rounded-full border border-white/15 flex items-center justify-center group-hover:border-primary/50 transition-all bg-white/[0.04] group-hover:bg-primary/10">
                   <Play className="w-3.5 h-3.5 ml-0.5 text-white" />
                 </div>
@@ -413,7 +451,7 @@ export default function Home() {
             </div>
 
             {/* Live command bar */}
-            <div className="hero-bar opacity-0 glass-panel rounded-2xl px-4 py-3.5 flex items-center gap-4 max-w-xl">
+            <div className="hero-bar glass-panel rounded-2xl px-4 py-3.5 flex items-center gap-4 max-w-xl">
               <VoiceOrb size="sm" state="listening" />
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] text-white/25 uppercase tracking-widest mb-0.5 font-semibold">
@@ -449,7 +487,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="hero-trust opacity-0 flex items-center gap-6 mt-8 text-xs text-white/25">
+            <div className="hero-trust flex items-center gap-6 mt-8 text-xs text-white/25">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Free forever plan
               </span>
@@ -463,10 +501,7 @@ export default function Home() {
           </div>
 
           {/* Right: Girl agent (responsive) */}
-          <div
-            className="relative flex items-end justify-center w-full max-w-full lg:max-w-none mx-auto"
-            style={{ minHeight: 420 }}
-          >
+          <div className="relative flex items-center justify-center w-full max-w-full lg:max-w-none mx-auto min-h-[420px]">
             {/* Glow halo */}
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-72 h-72 md:w-80 md:h-80 bg-primary/25 rounded-full blur-[100px]" />
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-40 md:w-48 md:h-48 bg-accent/20 rounded-full blur-[60px]" />
@@ -479,7 +514,7 @@ export default function Home() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="hidden lg:block hero-float-card absolute top-10 -left-6 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
+              className="hero-float-card absolute top-6 left-1/2 -translate-x-1/2 sm:left-10 sm:translate-x-0 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
             >
               <p className="text-xs text-white/40 mb-0.5">Task completed</p>
               <p className="text-sm font-bold text-white">
@@ -500,7 +535,7 @@ export default function Home() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="hidden lg:block hero-float-card absolute top-1/3 -right-4 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
+              className="hero-float-card absolute top-1/4 right-1/2 translate-x-1/2 sm:right-4 sm:translate-x-0 glass-panel px-4 py-3 rounded-2xl z-20 border-white/10 shadow-xl"
             >
               <p className="text-xs text-white/40 mb-1">Now browsing</p>
               <div className="flex items-center gap-2">
@@ -517,7 +552,7 @@ export default function Home() {
             <motion.div
               animate={{ y: [0, -8, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="hidden lg:block hero-float-card absolute bottom-28 -left-8 glass-panel px-3.5 py-3 rounded-2xl z-20 border-white/10"
+              className="hero-float-card absolute bottom-20 left-1/2 -translate-x-1/2 sm:left-8 sm:translate-x-0 glass-panel px-3.5 py-3 rounded-2xl z-20 border-white/10"
             >
               <div className="flex items-center gap-2.5">
                 <div className="flex items-end gap-0.5 h-5">
@@ -548,7 +583,7 @@ export default function Home() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="hidden lg:block hero-float-card absolute top-6 right-2 glass-panel px-3 py-2 rounded-xl z-20 border-white/10"
+              className="hero-float-card absolute top-6 right-1/2 translate-x-1/2 sm:right-2 sm:translate-x-0 glass-panel px-3 py-2 rounded-xl z-20 border-white/10"
             >
               <div className="flex items-center gap-2">
                 <Search className="w-3.5 h-3.5 text-primary" />
@@ -604,7 +639,7 @@ export default function Home() {
           {STATS.map((s, i) => (
             <GsapFadeUp key={s.label} delay={i * 0.1} className="text-center">
               <p className="text-4xl md:text-5xl font-black text-gradient mb-1">
-                <span className="stat-number">0{s.suffix}</span>
+                <span className="stat-number">—</span>
               </p>
               <p className="text-sm text-white/35 font-medium">{s.label}</p>
             </GsapFadeUp>
@@ -879,20 +914,20 @@ export default function Home() {
                 10x faster — with nothing but their voice.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/sign-up">
-                  <Button
-                    size="lg"
-                    className="h-13 px-10 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-base gap-2 shadow-2xl shadow-primary/30 group"
-                  >
-                    Activate your co-pilot
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-                <Link href="/sign-in">
-                  <button className="text-sm text-white/35 hover:text-white transition-colors font-medium">
-                    Already have an account? Log in
-                  </button>
-                </Link>
+                <Button
+                  size="lg"
+                  onClick={() => setLocation("/sign-up")}
+                  className="h-13 px-10 rounded-full bg-primary hover:bg-primary/90 text-white font-bold text-base gap-2 shadow-2xl shadow-primary/30 group"
+                >
+                  Activate your co-pilot
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+                <button
+                  onClick={() => setLocation("/sign-in")}
+                  className="text-sm text-white/35 hover:text-white transition-colors font-medium"
+                >
+                  Already have an account? Log in
+                </button>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-6 mt-8 text-xs text-white/20">
                 <span className="flex items-center gap-1.5">
