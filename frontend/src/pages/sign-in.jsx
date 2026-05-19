@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
-import { Mic, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import {
+  Mic,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Loader2,
+  Mail,
+  KeyRound,
+} from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +56,22 @@ export default function SignIn() {
 
   const handleGoogle = () => {
     window.location.href = "/api/auth/google";
+  };
+
+  const normalizeName = (v) => v.trim().replace(/\s+/g, " ");
+
+  const isValidEmail = (v) => {
+    const val = v.trim();
+    if (!val) return false;
+
+    // no spaces allowed anywhere
+    if (/\s/.test(v)) return false;
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  };
+
+  const isValidPassword = (v) => {
+    return v.trim().length >= 8;
   };
 
   return (
@@ -150,6 +174,7 @@ export default function SignIn() {
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Email */}
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="email"
@@ -157,19 +182,36 @@ export default function SignIn() {
               >
                 Email
               </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="you@example.com"
-                autoComplete="email"
-                value={form.email}
-                onChange={handleChange}
-                data-testid="input-email"
-                className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/18 focus:border-primary/50 h-11 rounded-xl"
-              />
-            </div>
 
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="alex@gmail.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  className={`
+        pl-10 bg-white/4 text-white h-11 rounded-xl
+        ${
+          form.email && !isValidEmail(form.email)
+            ? "border-red-500 focus:border-red-500"
+            : "border-white/8 focus:border-primary/50"
+        }
+      `}
+                />
+              </div>
+
+              {/* Password */}
+
+              {form.email && !isValidEmail(form.email) && (
+                <p className="text-red-500 text-xs">
+                  Invalid email (no spaces allowed)
+                </p>
+              )}
+            </div>
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <Label
@@ -191,26 +233,33 @@ export default function SignIn() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+                  placeholder="Min. 8 characters"
                   value={form.password}
                   onChange={handleChange}
-                  data-testid="input-password"
-                  className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/18 focus:border-primary/50 h-11 rounded-xl pr-11"
+                  className={`
+                  bg-white/4 text-white h-11 rounded-xl pr-11
+                  ${
+                    form.password && !isValidPassword(form.password)
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-white/8 focus:border-primary/50"
+                  }
+                 `}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/28 hover:text-white/60 transition-colors"
-                  data-testid="button-toggle-password"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPassword ? <Eye /> : <EyeOff />}
                 </button>
               </div>
+
+              {form.password && !isValidPassword(form.password) && (
+                <p className="text-red-500 text-xs">
+                  Password must be at least 8 characters
+                </p>
+              )}
             </div>
 
             <Button

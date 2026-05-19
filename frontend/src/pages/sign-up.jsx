@@ -291,13 +291,13 @@ export default function SignUp() {
                   value={form.password}
                   onChange={handleChange}
                   className={`
-        bg-white/4 text-white h-11 rounded-xl pr-11
-        ${
-          form.password && !isValidPassword(form.password)
-            ? "border-red-500 focus:border-red-500"
-            : "border-white/8 focus:border-primary/50"
-        }
-      `}
+                  bg-white/4 text-white h-11 rounded-xl pr-11
+                  ${
+                    form.password && !isValidPassword(form.password)
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-white/8 focus:border-primary/50"
+                  }
+                 `}
                 />
 
                 <button
