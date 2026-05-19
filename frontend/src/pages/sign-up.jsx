@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
@@ -57,7 +58,7 @@ export default function SignUp() {
   // ── Submit ──────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    // Block submit if anything is invalid
     const newErrors = {};
 
     if (!isValidName(form.name)) {
@@ -83,30 +84,25 @@ export default function SignUp() {
       return;
     }
 
-    // Block submit if anything is invalid
-
     setIsLoading(true); // ← FIX: was missing before
 
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-        }),
+      const res = await axios.post("/api/auth/register", {
+        name: form.name,
+        email: form.email,
+        password: form.password,
       });
+
       console.log(form);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Registration failed");
 
       sessionStorage.setItem("browseai_pending_email", form.email);
+
       setLocation("/verify-otp");
     } catch (err) {
       toast({
         title: "Registration failed",
-        description: err.message || "Something went wrong",
+        description:
+          err.response?.data?.message || err.message || "Something went wrong",
         variant: "destructive",
       });
     } finally {
