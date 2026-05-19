@@ -173,117 +173,128 @@ export default function Home() {
   // GSAP Hero entrance
   useEffect(() => {
     if (!heroRef.current) return;
-    let ctx;
-    try {
-      ctx = gsap.context(() => {
-        // Ensure initial hidden state so animations always run
-        gsap.set(
-          ".hero-badge, .hero-word, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
-          { opacity: 0, y: 20 },
-        );
 
-        const tl = gsap.timeline({ delay: 0.1 });
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      let ctx;
+      try {
+        ctx = gsap.context(() => {
+          // Don't force opacity 0 - let elements be visible
+          const tl = gsap.timeline({ delay: 0.1 });
 
-        // Badge
-        tl.fromTo(
-          ".hero-badge",
-          { opacity: 0, y: 20 },
-          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
-        )
-          // Headline words stagger
-          .fromTo(
-            ".hero-word",
-            { opacity: 0, y: 40, skewY: 3 },
-            {
-              opacity: 1,
-              y: 0,
-              skewY: 0,
-              duration: 0.7,
-              stagger: 0.07,
-              ease: "power3.out",
-            },
-            "-=0.3",
-          )
-          // Sub copy
-          .fromTo(
-            ".hero-sub",
+          // Badge
+          tl.fromTo(
+            ".hero-badge",
             { opacity: 0, y: 20 },
             { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
-            "-=0.4",
           )
-          // CTAs
-          .fromTo(
-            ".hero-cta",
-            { opacity: 0, y: 16 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.5,
-              stagger: 0.1,
-              ease: "power3.out",
+            // Headline words stagger
+            .fromTo(
+              ".hero-word",
+              { opacity: 0, y: 40, skewY: 3 },
+              {
+                opacity: 1,
+                y: 0,
+                skewY: 0,
+                duration: 0.7,
+                stagger: 0.07,
+                ease: "power3.out",
+              },
+              "-=0.3",
+            )
+            // Sub copy
+            .fromTo(
+              ".hero-sub",
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+              "-=0.4",
+            )
+            // CTAs
+            .fromTo(
+              ".hero-cta",
+              { opacity: 0, y: 16 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.5,
+                stagger: 0.1,
+                ease: "power3.out",
+              },
+              "-=0.3",
+            )
+            // Command bar
+            .fromTo(
+              ".hero-bar",
+              { opacity: 0, y: 20, scale: 0.97 },
+              {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                duration: 0.6,
+                ease: "back.out(1.3)",
+              },
+              "-=0.2",
+            )
+            // Trust badges
+            .fromTo(
+              ".hero-trust",
+              { opacity: 0 },
+              { opacity: 1, duration: 0.5 },
+              "-=0.2",
+            );
+
+          // Girl parallax on scroll
+          gsap.to(girlRef.current, {
+            yPercent: -12,
+            ease: "none",
+            scrollTrigger: {
+              trigger: heroRef.current,
+              start: "top top",
+              end: "bottom top",
+              scrub: true,
             },
-            "-=0.3",
-          )
-          // Command bar
-          .fromTo(
-            ".hero-bar",
-            { opacity: 0, y: 20, scale: 0.97 },
-            {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              duration: 0.6,
-              ease: "back.out(1.3)",
+          });
+
+          // Floating cards parallax
+          gsap.to(".hero-float-card", {
+            y: -30,
+            ease: "none",
+            stagger: 0.05,
+            scrollTrigger: {
+              trigger: heroRef.current,
+              start: "top top",
+              end: "bottom top",
+              scrub: 1.5,
             },
-            "-=0.2",
+          });
+        }, heroRef);
+      } catch (e) {
+        // If GSAP fails, make sure hero elements are visible
+        document
+          .querySelectorAll(
+            ".hero-badge, .hero-word, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
           )
-          // Trust badges
-          .fromTo(
-            ".hero-trust",
-            { opacity: 0 },
-            { opacity: 1, duration: 0.5 },
-            "-=0.2",
-          );
+          .forEach((el) => {
+            (el as HTMLElement).style.opacity = "1";
+          });
+      }
 
-        // Girl parallax on scroll
-        gsap.to(girlRef.current, {
-          yPercent: -12,
-          ease: "none",
-          scrollTrigger: {
-            trigger: heroRef.current,
-            start: "top top",
-            end: "bottom top",
-            scrub: true,
-          },
-        });
+      return () => {
+        if (ctx) ctx.revert();
+        ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      };
+    }, 100);
 
-        // Floating cards parallax
-        gsap.to(".hero-float-card", {
-          y: -30,
-          ease: "none",
-          stagger: 0.05,
-          scrollTrigger: {
-            trigger: heroRef.current,
-            start: "top top",
-            end: "bottom top",
-            scrub: 1.5,
-          },
-        });
-      }, heroRef);
-    } catch (e) {
-      // If GSAP fails, make sure hero elements are visible
-      document
-        .querySelectorAll(
-          ".hero-badge, .hero-word, .hero-sub, .hero-cta, .hero-bar, .hero-trust",
-        )
-        .forEach((el) => el.classList.remove("opacity-0"));
-    }
-
-    return () => ctx?.revert?.();
+    return () => {
+      clearTimeout(timer);
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    };
   }, []);
 
   // GSAP stat counters
   useEffect(() => {
+    const triggers: ScrollTrigger[] = [];
+
     const ctx = gsap.context(() => {
       document.querySelectorAll(".stat-number").forEach((el, i) => {
         const stat = STATS[i];
@@ -296,7 +307,7 @@ export default function Home() {
           return Math.round(val).toLocaleString();
         };
 
-        ScrollTrigger.create({
+        const trigger = ScrollTrigger.create({
           trigger: el,
           start: "top 85%",
           once: true,
@@ -316,9 +327,15 @@ export default function Home() {
             });
           },
         });
+
+        triggers.push(trigger);
       });
     });
-    return () => ctx.revert();
+
+    return () => {
+      triggers.forEach((trigger) => trigger.kill());
+      ctx.revert();
+    };
   }, []);
 
   if (isLoading) return null;
