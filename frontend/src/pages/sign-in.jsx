@@ -81,8 +81,7 @@ export default function SignIn() {
             <span className="text-gradient">BrowseAI</span>
           </h2>
           <p className="text-white/35 text-sm leading-relaxed max-w-xs mb-8">
-            Your AI co-pilot is standing by — ready to navigate, research, and
-            execute tasks for you.
+            Your AI co-pilot is waiting for commands
           </p>
           <div className="flex flex-col gap-3 text-left w-full max-w-xs">
             {[
@@ -107,7 +106,7 @@ export default function SignIn() {
 
         <button
           onClick={() => setLocation("/")}
-          className="absolute top-6 left-6 flex items-center gap-2 text-white/45 hover:text-white transition-colors"
+          className="absolute top-6 left-6 flex items-center gap-2 text-white/45 hover:text-white transition-colors cursor-pointer"
           data-testid="link-back-home"
         >
           <div className="w-7 h-7 rounded-xl bg-primary/20 flex items-center justify-center">

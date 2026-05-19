@@ -343,7 +343,7 @@ export default function Home() {
           {NAV_LINKS.map((l) => (
             <button
               key={l}
-              className="text-sm text-white/45 hover:text-white transition-colors font-medium"
+              className="text-sm text-white/45 hover:text-white transition-colors font-medium cursor-pointer"
             >
               {l}
             </button>
@@ -351,9 +351,9 @@ export default function Home() {
         </div>
         <Button
           onClick={() => setLocation("/sign-in")}
-          className="rounded-full bg-primary hover:bg-primary/90 text-white text-sm px-5 h-9 shadow-lg shadow-primary/25 font-semibold"
+          className="rounded-full bg-primary hover:bg-primary/90 text-white text-sm px-5 h-9 shadow-lg shadow-primary/25 font-semibold cursor-pointer"
         >
-          Get started free
+          Log in
         </Button>
       </nav>
 
@@ -362,7 +362,7 @@ export default function Home() {
       ══════════════════════════════════════ */}
       <section
         ref={heroRef}
-        className="relative min-h-screen flex items-center pt-20 overflow-hidden"
+        className="relative min-h-screen flex items-center pt-10 overflow-hidden"
       >
         {/* Ambient background */}
         <div className="absolute inset-0 pointer-events-none">
@@ -397,26 +397,22 @@ export default function Home() {
               ref={headlineRef}
               className="text-4xl sm:text-5xl md:text-6xl lg:text-[72px] font-black tracking-tight leading-[1.03] mb-6"
             >
-              {["Your browser,", "commanded", "by voice."].map((line, li) => (
-                <div key={li} className="overflow-hidden">
-                  <span
-                    className={`hero-word block ${li === 1 ? "text-gradient" : "text-white"}`}
-                  >
-                    {line}
-                  </span>
-                </div>
-              ))}
+              {["Control Your,", "Browser", "With Your Voice."].map(
+                (line, li) => (
+                  <div key={li} className="overflow-hidden">
+                    <span
+                      className={`hero-word block ${li === 2 ? "text-gradient" : "text-white"}`}
+                    >
+                      {line}
+                    </span>
+                  </div>
+                ),
+              )}
             </h1>
 
             <p className="hero-sub text-base md:text-lg text-white/45 max-w-lg mb-6 leading-relaxed">
-              BrowseAI is your AI co-pilot that watches your screen, navigates
-              the web, writes emails, and executes real tasks — through your
-              voice alone.
-            </p>
-            <p className="hero-sub text-sm md:text-base text-white/55 max-w-lg mb-10 leading-relaxed">
-              Turn a single spoken instruction into a completed workflow:
-              research fast, book meetings, fill forms, and summarize content
-              without touching the keyboard.
+              Speak naturally. Watch your AI agent work directly on your screen
+              in real-time. No more clicking, typing, or searching.
             </p>
 
             {/* Feature pills */}
