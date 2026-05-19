@@ -436,7 +436,7 @@ export default function Home() {
               <Button
                 size="lg"
                 onClick={() => setLocation("/sign-up")}
-                className="hero-cta h-12 px-8 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-base gap-2 shadow-2xl shadow-primary/30 group"
+                className="hero-cta h-12 px-8 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-base gap-2 shadow-2xl shadow-primary/30 group cursor-pointer"
               >
                 Start for free
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
