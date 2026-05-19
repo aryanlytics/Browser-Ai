@@ -25,12 +25,29 @@ export default function SignIn() {
   const { login } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = {};
+
+    if (!isValidEmail(form.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!isValidPassword(form.password)) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+
+    setErrors(newErrors);
+
+    // stop submit if errors exist
+    if (Object.keys(newErrors).length > 0) {
+      return;
+    }
     setIsLoading(true);
     try {
       const res = await fetch("/api/auth/login", {
@@ -196,7 +213,7 @@ export default function SignIn() {
                   className={`
         pl-10 bg-white/4 text-white h-11 rounded-xl
         ${
-          form.email && !isValidEmail(form.email)
+          (form.email && !isValidEmail(form.email)) || errors.email
             ? "border-red-500 focus:border-red-500"
             : "border-white/8 focus:border-primary/50"
         }
@@ -204,14 +221,14 @@ export default function SignIn() {
                 />
               </div>
 
-              {/* Password */}
-
-              {form.email && !isValidEmail(form.email) && (
+              {((form.email && !isValidEmail(form.email)) || errors.email) && (
                 <p className="text-red-500 text-xs">
-                  Invalid email (no spaces allowed)
+                  {errors.email || "Invalid email (no spaces allowed)"}
                 </p>
               )}
             </div>
+
+            {/* Password */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <Label
@@ -228,6 +245,7 @@ export default function SignIn() {
                   Forgot?
                 </button>
               </div>
+
               <div className="relative">
                 <Input
                   id="password"
@@ -237,27 +255,32 @@ export default function SignIn() {
                   value={form.password}
                   onChange={handleChange}
                   className={`
-                  bg-white/4 text-white h-11 rounded-xl pr-11
-                  ${
-                    form.password && !isValidPassword(form.password)
-                      ? "border-red-500 focus:border-red-500"
-                      : "border-white/8 focus:border-primary/50"
-                  }
-                 `}
+        bg-white/4 text-white h-11 rounded-xl pr-11
+        ${
+          (form.password && !isValidPassword(form.password)) || errors.password
+            ? "border-red-500 focus:border-red-500"
+            : "border-white/8 focus:border-primary/50"
+        }
+      `}
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
-                  {showPassword ? <Eye /> : <EyeOff />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
 
-              {form.password && !isValidPassword(form.password) && (
+              {((form.password && !isValidPassword(form.password)) ||
+                errors.password) && (
                 <p className="text-red-500 text-xs">
-                  Password must be at least 8 characters
+                  {errors.password || "Password must be at least 8 characters"}
                 </p>
               )}
             </div>
