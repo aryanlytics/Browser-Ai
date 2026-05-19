@@ -192,7 +192,7 @@ export default function Home() {
     gsap.set(".hero-bar", { opacity: 0, y: 35, scale: 0.92 });
     gsap.set(".hero-trust", { opacity: 0, y: 20 });
 
-    let ctx: gsap.Context;
+    let ctx;
 
     const runAnimation = () => {
       ctx = gsap.context(() => {
@@ -275,7 +275,7 @@ export default function Home() {
 
   // ── ALSO fix your stat counter useEffect — replace it with this ──
   useEffect(() => {
-    const triggers: ScrollTrigger[] = [];
+    const triggers = [];
 
     // Wait for ScrollTrigger.refresh() above to complete first
     const id = setTimeout(() => {
@@ -285,7 +285,7 @@ export default function Home() {
           const obj = { val: 0 };
 
           // Reset text to dash in case of stale value from prev mount
-          (el).textContent = "—";
+          el.textContent = "—";
 
           const trigger = ScrollTrigger.create({
             trigger: el,
@@ -298,13 +298,13 @@ export default function Home() {
                 delay: i * 0.15,
                 ease: "power2.out",
                 onUpdate: () => {
-                  (el).textContent =
+                  el.textContent =
                     (stat.value < 5
                       ? Math.floor(obj.val)
                       : Math.round(obj.val).toLocaleString()) + stat.suffix;
                 },
                 onComplete: () => {
-                  (el).textContent = stat.value + stat.suffix;
+                  el.textContent = stat.value + stat.suffix;
                 },
               });
             },
