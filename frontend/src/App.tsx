@@ -10,7 +10,7 @@ import { PageLoader } from "./components/page-loader";
 
 import Home from "./pages/home";
 import SignIn from "./pages/sign-in";
-import SignUp from "./pages/sign-up";
+import SignUp from "./pages/sign-up.jsx";
 import VerifyOtp from "./pages/verify-otp";
 import Dashboard from "./pages/dashboard";
 import NotFound from "./pages/not-found";

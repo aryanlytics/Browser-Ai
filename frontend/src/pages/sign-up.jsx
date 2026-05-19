@@ -8,9 +8,6 @@ import {
   ArrowRight,
   Loader2,
   CheckCircle2,
-  Mail,
-  CircleUser,
-  KeyRound,
 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Button } from "../components/ui/button";
@@ -29,21 +26,47 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+  const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // ── CLIENT SIDE VALIDATION ──────────────────────────────────
+  const validate = () => {
+    const errs = {};
+    if (!form.name.trim()) errs.name = "Name is required";
+    if (!form.email.trim()) errs.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      errs.email = "Enter a valid email";
+    if (!form.password) errs.password = "Password is required";
+    else if (form.password.length < 8)
+      errs.password = "Password must be at least 8 characters";
+    if (form.password !== form.confirmPassword)
+      errs.confirmPassword = "Passwords do not match";
+    return errs;
+  };
+
+  // ── SUBMIT → SEND TO BACKEND ────────────────────────────────
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
     setIsLoading(true);
+
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -56,13 +79,14 @@ export default function SignUp() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.message || "Registration failed");
+
+      // Save email for OTP page to use
       sessionStorage.setItem("browseai_pending_email", form.email);
       setLocation("/verify-otp");
-    } catch (err: unknown) {
+    } catch (err) {
       toast({
         title: "Registration failed",
-        description:
-          err instanceof Error ? err.message : "Something went wrong",
+        description: err.message || "Something went wrong",
         variant: "destructive",
       });
     } finally {
@@ -76,7 +100,7 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen bg-background flex relative overflow-hidden">
-      {/* Left: image + brand panel */}
+      {/* ── Left panel (desktop only) ── */}
       <div className="hidden lg:flex w-[45%] relative overflow-hidden items-center justify-center flex-col">
         <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-primary/15 to-background" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
@@ -119,16 +143,16 @@ export default function SignUp() {
         </div>
       </div>
 
-      {/* Right: form */}
+      {/* ── Right: form ── */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
         <div className="absolute inset-0 lg:hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px]" />
         </div>
 
+        {/* Logo */}
         <button
           onClick={() => setLocation("/")}
           className="absolute top-6 left-6 flex items-center gap-2 text-white/45 hover:text-white transition-colors"
-          data-testid="link-back-home"
         >
           <div className="w-7 h-7 rounded-xl bg-primary/20 flex items-center justify-center">
             <Mic className="w-3.5 h-3.5 text-primary" />
@@ -151,11 +175,10 @@ export default function SignUp() {
             </p>
           </div>
 
-          {/* Google */}
+          {/* Google button */}
           <button
             type="button"
             onClick={handleGoogle}
-            data-testid="button-google-signup"
             className="w-full flex items-center justify-center gap-3 h-11 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/8 hover:border-white/20 text-white text-sm font-medium transition-all mb-5"
           >
             <SiGoogle className="w-4 h-4 text-white/60" />
@@ -164,13 +187,14 @@ export default function SignUp() {
 
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px bg-white/[0.07]" />
-            <span className="text-[11px] text-white/22 font-medium">
+            <span className="text-[11px] text-white/40 font-medium">
               or register with email
             </span>
             <div className="flex-1 h-px bg-white/[0.07]" />
           </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Name */}
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="name"
@@ -186,19 +210,21 @@ export default function SignUp() {
                 autoComplete="name"
                 value={form.name}
                 onChange={handleChange}
-                data-testid="input-name"
-                className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/18 focus:border-primary/50 h-11 rounded-xl"
+                className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/30 focus:border-primary/50 h-11 rounded-xl"
               />
+              {errors.name && (
+                <p className="text-red-400 text-xs mt-0.5">{errors.name}</p>
+              )}
             </div>
 
+            {/* Email */}
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="email"
                 className="text-white/50 text-[11px] font-semibold uppercase tracking-wider"
               >
-                Email <Mail />
+                Email
               </Label>
-
               <Input
                 id="email"
                 name="email"
@@ -207,19 +233,14 @@ export default function SignUp() {
                 autoComplete="email"
                 value={form.email}
                 onChange={handleChange}
-                data-testid="input-email"
-                className="
-                  bg-white/[0.04]
-                  border-white/8
-                  text-white
-                  placeholder:text-white/18
-                  focus:border-primary/50
-                  h-11
-                  rounded-xl
-                "
+                className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/30 focus:border-primary/50 h-11 rounded-xl"
               />
+              {errors.email && (
+                <p className="text-red-400 text-xs mt-0.5">{errors.email}</p>
+              )}
             </div>
 
+            {/* Password */}
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="password"
@@ -236,14 +257,12 @@ export default function SignUp() {
                   autoComplete="new-password"
                   value={form.password}
                   onChange={handleChange}
-                  data-testid="input-password"
-                  className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/18 focus:border-primary/50 h-11 rounded-xl pr-11"
+                  className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/30 focus:border-primary/50 h-11 rounded-xl pr-11"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/28 hover:text-white/60 transition-colors"
-                  data-testid="button-toggle-password"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -252,8 +271,12 @@ export default function SignUp() {
                   )}
                 </button>
               </div>
+              {errors.password && (
+                <p className="text-red-400 text-xs mt-0.5">{errors.password}</p>
+              )}
             </div>
 
+            {/* Confirm password */}
             <div className="flex flex-col gap-1.5">
               <Label
                 htmlFor="confirmPassword"
@@ -270,14 +293,12 @@ export default function SignUp() {
                   autoComplete="new-password"
                   value={form.confirmPassword}
                   onChange={handleChange}
-                  data-testid="input-confirm-password"
-                  className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/18 focus:border-primary/50 h-11 rounded-xl pr-11"
+                  className="bg-white/[0.04] border-white/8 text-white placeholder:text-white/30 focus:border-primary/50 h-11 rounded-xl pr-11"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/28 hover:text-white/60 transition-colors"
-                  data-testid="button-toggle-confirm"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
                   {showConfirm ? (
                     <EyeOff className="w-4 h-4" />
@@ -286,12 +307,16 @@ export default function SignUp() {
                   )}
                 </button>
               </div>
+              {errors.confirmPassword && (
+                <p className="text-red-400 text-xs mt-0.5">
+                  {errors.confirmPassword}
+                </p>
+              )}
             </div>
 
             <Button
               type="submit"
               disabled={isLoading}
-              data-testid="button-submit"
               className="h-11 mt-1 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl gap-2 group shadow-lg shadow-primary/20"
             >
               {isLoading ? (
@@ -307,17 +332,16 @@ export default function SignUp() {
               )}
             </Button>
 
-            <p className="text-center text-[11px] text-white/18 mt-0.5">
+            <p className="text-center text-[11px] text-white/30 mt-0.5">
               By signing up you agree to our Terms and Privacy Policy.
             </p>
           </form>
 
-          <p className="text-center mt-6 text-sm text-white/28">
+          <p className="text-center mt-6 text-sm text-white/30">
             Have an account?{" "}
             <button
               onClick={() => setLocation("/sign-in")}
               className="text-primary hover:text-primary/70 font-semibold transition-colors cursor-pointer"
-              data-testid="link-sign-in"
             >
               Sign in
             </button>
