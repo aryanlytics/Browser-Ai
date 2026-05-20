@@ -332,7 +332,7 @@ export default function Home() {
       {/* ── Navigation ── */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-14 py-4 border-b border-white/6 backdrop-blur-2xl bg-background/80">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
+          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
             <Mic className="w-4 h-4 text-white" />
           </div>
           <span className="font-bold text-lg tracking-tight text-white">
