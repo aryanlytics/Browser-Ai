@@ -5,12 +5,14 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const connectDB = require("./config/database");
+const connectDB = require("./config/redis");
 const authRoutes = require("./routes/auth");
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
 // Connect to database
+connectRedis();
 connectDB();
 
 // Middleware
