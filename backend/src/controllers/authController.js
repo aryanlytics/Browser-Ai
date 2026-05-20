@@ -91,28 +91,76 @@ async function register(req, res) {
 
     await resend.emails.send({
       from: "onboarding@resend.dev",
-
       to: email,
-
-      subject: "Verify your email",
-
+      subject: "Verify Your Email - BrowserAI",
       html: `
-        <div style="font-family:sans-serif;">
-          <h2>Email Verification</h2>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Verify Your Email</title>
+    </head>
+    <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: 'Segoe UI', Arial, sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4; padding: 40px 0;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" max-width="600px" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+              
+              <!-- Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #6b46c1, #805ad5); padding: 40px 30px; text-align:center;">
+                  <h1 style="color:white; margin:0; font-size:28px;">BrowserAI</h1>
+                  <p style="color:#e0d4ff; margin:8px 0 0 0; font-size:16px;">Voice-Powered Browser Agent</p>
+                </td>
+              </tr>
 
-          <p>
-            Your OTP code is:
-          </p>
+              <!-- Content -->
+              <tr>
+                <td style="padding: 50px 40px 40px; text-align:center;">
+                  <h2 style="color:#1f2937; margin:0 0 16px 0; font-size:24px;">Verify Your Email Address</h2>
+                  
+                  <p style="color:#4b5563; font-size:16px; line-height:1.6; margin-bottom:30px;">
+                    Thank you for signing up! Please use the OTP below to verify your email address.
+                  </p>
 
-          <h1>
-            ${otp}
-          </h1>
+                  <!-- OTP Box -->
+                  <div style="background-color:#f8fafc; border:2px dashed #7c3aed; border-radius:12px; padding:20px; margin:30px 0;">
+                    <p style="color:#6b7280; font-size:14px; margin:0 0 8px 0;">Your Verification Code</p>
+                    <h1 style="font-size:42px; letter-spacing:8px; color:#4f46e5; margin:0; font-weight:700;">
+                      ${otp}
+                    </h1>
+                  </div>
 
-          <p>
-            This OTP will expire in 2 minutes.
-          </p>
-        </div>
-      `,
+                  <p style="color:#ef4444; font-size:15px; margin:20px 0;">
+                    This code will expire in <strong>2 minutes</strong>.
+                  </p>
+
+                  <p style="color:#6b7280; font-size:14px;">
+                    If you didn't request this code, you can safely ignore this email.
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="background-color:#f8fafc; padding:30px; text-align:center; border-top:1px solid #e5e7eb;">
+                  <p style="color:#9ca3af; font-size:13px; margin:0;">
+                    © 2026 BrowserAI. All rights reserved.
+                  </p>
+                  <p style="color:#9ca3af; font-size:13px; margin:8px 0 0 0;">
+                    Need help? Contact us at support@browserai.com
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `,
     });
 
     // ─────────────────────────────────────────
@@ -132,70 +180,6 @@ async function register(req, res) {
     res.status(500).json({
       success: false,
 
-      message: "Server error during registration",
-    });
-  }
-}
-
-module.exports = {
-  register,
-};
-
-async function regiter(req, res) {
-  try {
-    const { name, email, password } = req.body;
-
-    // Check if user already exists
-    const isAlreadyRegister = await registerModel.findOne({ email });
-
-    if (isAlreadyRegister) {
-      return res.status(409).json({
-        success: false,
-        message: "User account already exists",
-      });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Create user
-    const newUser = await registerModel.create({
-      name,
-      email,
-      password: hashedPassword,
-      lastLogin: null, // explicitly set
-    });
-
-    // Generate JWT
-    const accessToken = jwt.sign({ id: newUser._id }, config.JWT_SECRET, {
-      expiresIn: "15m",
-    });
-
-    const refreshToken = jwt.sign({ id: newUser._id }, config.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-      },
-      accessToken,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      success: false,
       message: "Server error during registration",
     });
   }

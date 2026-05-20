@@ -87,13 +87,19 @@ export default function SignUp() {
     setIsLoading(true); // ← FIX: was missing before
 
     try {
+      setIsLoading(true);
+
       const res = await axios.post("/api/auth/register", {
         name: form.name,
         email: form.email,
         password: form.password,
       });
 
-      console.log(form);
+      toast({
+        title: "Success",
+
+        description: res.data.message,
+      });
 
       sessionStorage.setItem("browseai_pending_email", form.email);
 
@@ -101,8 +107,10 @@ export default function SignUp() {
     } catch (err) {
       toast({
         title: "Registration failed",
+
         description:
           err.response?.data?.message || err.message || "Something went wrong",
+
         variant: "destructive",
       });
     } finally {

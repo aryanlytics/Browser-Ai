@@ -5,7 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const connectDB = require("./config/database");
-const connectDB = require("./config/redis");
+const { connectRedis } = require("./config/redis");
 const authRoutes = require("./routes/auth");
 const errorHandler = require("./middleware/errorHandler");
 
