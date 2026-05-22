@@ -248,4 +248,225 @@ async function login(req, res) {
   }
 }
 
-module.exports = { register, login };
+// ─────────────────────────────────────────────
+// Verify OTP Controller
+// ─────────────────────────────────────────────
+async function verifyOTP(req, res) {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and OTP code are required",
+      });
+    }
+
+    // Get the stored registration details from Redis
+    const storedData = await redisClient.get(`register:${email}`);
+    if (!storedData) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification session expired or email not found",
+      });
+    }
+
+    const userData = JSON.parse(storedData);
+
+    // Validate the OTP
+    if (userData.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification code",
+      });
+    }
+
+    // Check if user already exists (just in case)
+    const isAlreadyRegister = await registerModel.findOne({ email });
+    if (isAlreadyRegister) {
+      return res.status(409).json({
+        success: false,
+        message: "User account already exists",
+      });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(userData.password, 12);
+
+    // Create the new user in MongoDB
+    const newUser = await registerModel.create({
+      name: userData.name,
+      email: userData.email,
+      password: hashedPassword,
+      lastLogin: Date.now(),
+    });
+
+    // Generate JWT token
+    const token = jwt.sign({ id: newUser._id }, config.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    // Clean up temporary data in Redis
+    await redisClient.del(`register:${email}`);
+    await redisClient.del(`otp_cooldown:${email}`);
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      token,
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during OTP verification",
+    });
+  }
+}
+
+// ─────────────────────────────────────────────
+// Resend OTP Controller
+// ─────────────────────────────────────────────
+async function resendOTP(req, res) {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Check if registration data exists in Redis
+    const storedData = await redisClient.get(`register:${email}`);
+    if (!storedData) {
+      return res.status(400).json({
+        success: false,
+        message: "Registration session has expired. Please sign up again.",
+      });
+    }
+
+    // Check resend cooldown to prevent OTP spam
+    const cooldown = await redisClient.get(`otp_cooldown:${email}`);
+    if (cooldown) {
+      return res.status(429).json({
+        success: false,
+        message: "Please wait before requesting another OTP",
+      });
+    }
+
+    const userData = JSON.parse(storedData);
+
+    // Generate a new secure OTP
+    const newOtp = crypto.randomInt(100000, 999999).toString();
+
+    // Update registration data in Redis with the new OTP (and refresh expiration to 2 minutes)
+    userData.otp = newOtp;
+    await redisClient.set(
+      `register:${email}`,
+      JSON.stringify(userData),
+      {
+        EX: 120,
+      }
+    );
+
+    // Set resend cooldown for another 60 seconds
+    await redisClient.set(`otp_cooldown:${email}`, "true", {
+      EX: 60,
+    });
+
+    // Resend the OTP email
+    await resend.emails.send({
+      from: "onboarding@resend.dev",
+      to: email,
+      subject: "Verify Your Email - BrowserAI",
+      html: `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Verify Your Email</title>
+    </head>
+    <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: 'Segoe UI', Arial, sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4; padding: 40px 0;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" max-width="600px" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
+              
+              <!-- Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #6b46c1, #805ad5); padding: 40px 30px; text-align:center;">
+                  <h1 style="color:white; margin:0; font-size:28px;">BrowserAI</h1>
+                  <p style="color:#e0d4ff; margin:8px 0 0 0; font-size:16px;">Voice-Powered Browser Agent</p>
+                </td>
+              </tr>
+
+              <!-- Content -->
+              <tr>
+                <td style="padding: 50px 40px 40px; text-align:center;">
+                  <h2 style="color:#1f2937; margin:0 0 16px 0; font-size:24px;">Verify Your Email Address</h2>
+                  
+                  <p style="color:#4b5563; font-size:16px; line-height:1.6; margin-bottom:30px;">
+                    Here is your new OTP. Please use this code below to verify your email address.
+                  </p>
+
+                  <!-- OTP Box -->
+                  <div style="background-color:#f8fafc; border:2px dashed #7c3aed; border-radius:12px; padding:20px; margin:30px 0;">
+                    <p style="color:#6b7280; font-size:14px; margin:0 0 8px 0;">Your New Verification Code</p>
+                    <h1 style="font-size:42px; letter-spacing:8px; color:#4f46e5; margin:0; font-weight:700;">
+                      \${newOtp}
+                    </h1>
+                  </div>
+
+                  <p style="color:#ef4444; font-size:15px; margin:20px 0;">
+                    This code will expire in <strong>2 minutes</strong>.
+                  </p>
+
+                  <p style="color:#6b7280; font-size:14px;">
+                    If you didn't request this code, you can safely ignore this email.
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Footer -->
+              <tr>
+                <td style="background-color:#f8fafc; padding:30px; text-align:center; border-top:1px solid #e5e7eb;">
+                  <p style="color:#9ca3af; font-size:13px; margin:0;">
+                    © 2026 BrowserAI. All rights reserved.
+                  </p>
+                  <p style="color:#9ca3af; font-size:13px; margin:8px 0 0 0;">
+                    Need help? Contact us at support@browserai.com
+                  </p>
+                </td>
+              </tr>
+
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "New OTP sent successfully to your email",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during OTP resend",
+    });
+  }
+}
+
+module.exports = { register, login, verifyOTP, resendOTP };
