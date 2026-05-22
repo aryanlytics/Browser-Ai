@@ -63,7 +63,7 @@ const taskIcons = {
 export default function Dashboard() {
   const { token, user, logout, isLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const [agentState, setAgentState] = useState < AgentState > "idle";
+  const [agentState, setAgentState] = useState("idle");
   const [isListening, setIsListening] = useState(false);
   const [screenSharing, setScreenSharing] = useState(false);
   const [transcript, setTranscript] = useState("");

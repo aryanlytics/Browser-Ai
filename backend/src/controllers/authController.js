@@ -3,7 +3,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const config = require("../config/config");
 const { redisClient } = require("../config/redis");
-const resend = require("resend");
+const { Resend } = require("resend");
+const resendInstance = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const crypto = require("crypto");
 
 // ─────────────────────────────────────────────
@@ -66,7 +67,7 @@ async function register(req, res) {
       JSON.stringify({
         name,
         email,
-        password,
+        password: hashedPassword,
         otp,
       }),
 
@@ -89,79 +90,94 @@ async function register(req, res) {
     // Send OTP Email
     // ─────────────────────────────────────────
 
-    await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to: email,
-      subject: "Verify Your Email - BrowserAI",
-      html: `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Verify Your Email</title>
-    </head>
-    <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: 'Segoe UI', Arial, sans-serif;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4; padding: 40px 0;">
-        <tr>
-          <td align="center">
-            <table role="presentation" width="100%" max-width="600px" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
-              
-              <!-- Header -->
-              <tr>
-                <td style="background: linear-gradient(135deg, #6b46c1, #805ad5); padding: 40px 30px; text-align:center;">
-                  <h1 style="color:white; margin:0; font-size:28px;">BrowserAI</h1>
-                  <p style="color:#e0d4ff; margin:8px 0 0 0; font-size:16px;">Voice-Powered Browser Agent</p>
-                </td>
-              </tr>
-
-              <!-- Content -->
-              <tr>
-                <td style="padding: 50px 40px 40px; text-align:center;">
-                  <h2 style="color:#1f2937; margin:0 0 16px 0; font-size:24px;">Verify Your Email Address</h2>
+    if (resendInstance) {
+      try {
+        await resendInstance.emails.send({
+          from: "onboarding@resend.dev",
+          to: email,
+          subject: "Verify Your Email - BrowserAI",
+          html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email</title>
+        </head>
+        <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: 'Segoe UI', Arial, sans-serif;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4; padding: 40px 0;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" max-width="600px" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
                   
-                  <p style="color:#4b5563; font-size:16px; line-height:1.6; margin-bottom:30px;">
-                    Thank you for signing up! Please use the OTP below to verify your email address.
-                  </p>
+                  <!-- Header -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #6b46c1, #805ad5); padding: 40px 30px; text-align:center;">
+                      <h1 style="color:white; margin:0; font-size:28px;">BrowserAI</h1>
+                      <p style="color:#e0d4ff; margin:8px 0 0 0; font-size:16px;">Voice-Powered Browser Agent</p>
+                    </td>
+                  </tr>
 
-                  <!-- OTP Box -->
-                  <div style="background-color:#f8fafc; border:2px dashed #7c3aed; border-radius:12px; padding:20px; margin:30px 0;">
-                    <p style="color:#6b7280; font-size:14px; margin:0 0 8px 0;">Your Verification Code</p>
-                    <h1 style="font-size:42px; letter-spacing:8px; color:#4f46e5; margin:0; font-weight:700;">
-                      ${otp}
-                    </h1>
-                  </div>
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 50px 40px 40px; text-align:center;">
+                      <h2 style="color:#1f2937; margin:0 0 16px 0; font-size:24px;">Verify Your Email Address</h2>
+                      
+                      <p style="color:#4b5563; font-size:16px; line-height:1.6; margin-bottom:30px;">
+                        Thank you for signing up! Please use the OTP below to verify your email address.
+                      </p>
 
-                  <p style="color:#ef4444; font-size:15px; margin:20px 0;">
-                    This code will expire in <strong>2 minutes</strong>.
-                  </p>
+                      <!-- OTP Box -->
+                      <div style="background-color:#f8fafc; border:2px dashed #7c3aed; border-radius:12px; padding:20px; margin:30px 0;">
+                        <p style="color:#6b7280; font-size:14px; margin:0 0 8px 0;">Your Verification Code</p>
+                        <h1 style="font-size:42px; letter-spacing:8px; color:#4f46e5; margin:0; font-weight:700;">
+                          ${otp}
+                        </h1>
+                      </div>
 
-                  <p style="color:#6b7280; font-size:14px;">
-                    If you didn't request this code, you can safely ignore this email.
-                  </p>
-                </td>
-              </tr>
+                      <p style="color:#ef4444; font-size:15px; margin:20px 0;">
+                        This code will expire in <strong>2 minutes</strong>.
+                      </p>
 
-              <!-- Footer -->
-              <tr>
-                <td style="background-color:#f8fafc; padding:30px; text-align:center; border-top:1px solid #e5e7eb;">
-                  <p style="color:#9ca3af; font-size:13px; margin:0;">
-                    © 2026 BrowserAI. All rights reserved.
-                  </p>
-                  <p style="color:#9ca3af; font-size:13px; margin:8px 0 0 0;">
-                    Need help? Contact us at support@browserai.com
-                  </p>
-                </td>
-              </tr>
+                      <p style="color:#6b7280; font-size:14px;">
+                        If you didn't request this code, you can safely ignore this email.
+                      </p>
+                    </td>
+                  </tr>
 
-            </table>
-          </td>
-        </tr>
-      </table>
-    </body>
-    </html>
-  `,
-    });
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color:#f8fafc; padding:30px; text-align:center; border-top:1px solid #e5e7eb;">
+                      <p style="color:#9ca3af; font-size:13px; margin:0;">
+                        © 2026 BrowserAI. All rights reserved.
+                      </p>
+                      <p style="color:#9ca3af; font-size:13px; margin:8px 0 0 0;">
+                        Need help? Contact us at support@browserai.com
+                      </p>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+        });
+      } catch (emailError) {
+        console.error("Resend Email Sending Error:", emailError);
+        if (process.env.NODE_ENV === "development") {
+          console.log(`[DEV ONLY BACKUP] Resend failed. OTP for ${email} is: ${otp}`);
+        } else {
+          throw emailError;
+        }
+      }
+    } else {
+      console.log("-----------------------------------------");
+      console.log(`[MOCK EMAIL] OTP generated for ${email}: ${otp}`);
+      console.log("-----------------------------------------");
+    }
 
     // ─────────────────────────────────────────
     // Success Response
@@ -184,6 +200,14 @@ async function register(req, res) {
     });
   }
 }
+
+
+
+
+
+
+
+
 
 async function login(req, res) {
   try {
@@ -381,47 +405,35 @@ async function resendOTP(req, res) {
       EX: 60,
     });
 
+    // ─────────────────────────────────────────
     // Resend the OTP email
-    await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to: email,
-      subject: "Verify Your Email - BrowserAI",
-      html: `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Verify Your Email</title>
-    </head>
-    <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: 'Segoe UI', Arial, sans-serif;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4; padding: 40px 0;">
-        <tr>
-          <td align="center">
-            <table role="presentation" width="100%" max-width="600px" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
-              
-              <!-- Header -->
-              <tr>
-                <td style="background: linear-gradient(135deg, #6b46c1, #805ad5); padding: 40px 30px; text-align:center;">
-                  <h1 style="color:white; margin:0; font-size:28px;">BrowserAI</h1>
-                  <p style="color:#e0d4ff; margin:8px 0 0 0; font-size:16px;">Voice-Powered Browser Agent</p>
-                </td>
-              </tr>
+    // ─────────────────────────────────────────
 
-              <!-- Content -->
-              <tr>
-                <td style="padding: 50px 40px 40px; text-align:center;">
-                  <h2 style="color:#1f2937; margin:0 0 16px 0; font-size:24px;">Verify Your Email Address</h2>
+    if (resendInstance) {
+      try {
+        await resendInstance.emails.send({
+          from: "onboarding@resend.dev",
+          to: email,
+          subject: "Verify Your Email - BrowserAI",
+          html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Verify Your Email</title>
+        </head>
+        <body style="margin:0; padding:0; background-color:#f4f4f4; font-family: 'Segoe UI', Arial, sans-serif;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4; padding: 40px 0;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" max-width="600px" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.1);">
                   
-                  <p style="color:#4b5563; font-size:16px; line-height:1.6; margin-bottom:30px;">
-                    Here is your new OTP. Please use this code below to verify your email address.
-                  </p>
-
                   <!-- OTP Box -->
                   <div style="background-color:#f8fafc; border:2px dashed #7c3aed; border-radius:12px; padding:20px; margin:30px 0;">
                     <p style="color:#6b7280; font-size:14px; margin:0 0 8px 0;">Your New Verification Code</p>
                     <h1 style="font-size:42px; letter-spacing:8px; color:#4f46e5; margin:0; font-weight:700;">
-                      \${newOtp}
+                      ${newOtp}
                     </h1>
                   </div>
 
@@ -454,7 +466,20 @@ async function resendOTP(req, res) {
     </body>
     </html>
   `,
-    });
+        });
+      } catch (emailError) {
+        console.error("Resend Email Resending Error:", emailError);
+        if (process.env.NODE_ENV === "development") {
+          console.log(`[DEV ONLY BACKUP] Resend failed. New OTP for ${email} is: ${newOtp}`);
+        } else {
+          throw emailError;
+        }
+      }
+    } else {
+      console.log("-----------------------------------------");
+      console.log(`[MOCK EMAIL] New OTP generated for ${email}: ${newOtp}`);
+      console.log("-----------------------------------------");
+    }
 
     res.status(200).json({
       success: true,
