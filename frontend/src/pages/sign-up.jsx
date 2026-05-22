@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Mail,
   CircleUserRound,
+  UserKey,
 } from "lucide-react";
 import { SiGoogle } from "react-icons/si";
 import { Button } from "../components/ui/button";
@@ -300,6 +301,8 @@ export default function SignUp() {
               </Label>
 
               <div className="relative">
+                <UserKey className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                
                 <Input
                   id="password"
                   name="password"
@@ -348,6 +351,7 @@ export default function SignUp() {
               </Label>
 
               <div className="relative">
+                <CircleUserRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"

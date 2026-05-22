@@ -204,6 +204,11 @@ async function register(req, res) {
 
 
 
+
+
+
+
+
 // ─────────────────────────────────────────────
 // Verify OTP Controller
 // ─────────────────────────────────────────────
@@ -237,23 +242,15 @@ async function verifyOTP(req, res) {
       });
     }
 
-    // Check if user already exists (just in case)
-    const isAlreadyRegister = await registerModel.findOne({ email });
-    if (isAlreadyRegister) {
-      return res.status(409).json({
-        success: false,
-        message: "User account already exists",
-      });
-    }
+ 
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(userData.password, 12);
+    
 
     // Create the new user in MongoDB
     const newUser = await registerModel.create({
       name: userData.name,
       email: userData.email,
-      password: hashedPassword,
+      password: userData.password,
       lastLogin: Date.now(),
     });
 
