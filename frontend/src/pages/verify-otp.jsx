@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "wouter";
@@ -16,7 +17,7 @@ export default function VerifyOtp() {
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCountdown, setResendCountdown] = useState(60);
-  const { login } = useAuth();
+
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -35,15 +36,16 @@ export default function VerifyOtp() {
     }
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
+      const res = await axios.post("/api/auth/verify-otp", {
+        email, otp
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Verification failed");
-      sessionStorage.removeItem("browseai_pending_email");
-      login(json.token);
+      toast({
+        title: "Success",
+
+        description: res.data.message,
+      });
+
+      
       setLocation("/dashboard");
     } catch (err) {
       toast({
@@ -59,13 +61,10 @@ export default function VerifyOtp() {
   const handleResend = async () => {
     setIsResending(true);
     try {
-      const res = await fetch("/api/auth/resend-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const res = await axios.post("/api/auth/resend-otp", {
+        email,
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Failed to resend");
+      if (!res.data.success) throw new Error(res.data.message || "Failed to resend");
       toast({ title: "New code sent", description: "Check your inbox." });
       setResendCountdown(60);
     } catch (err) {
