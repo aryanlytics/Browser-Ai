@@ -87,8 +87,6 @@ export default function SignUp() {
     setIsLoading(true); // ← FIX: was missing before
 
     try {
-      setIsLoading(true);
-
       const res = await axios.post("/api/auth/register", {
         name: form.name,
         email: form.email,

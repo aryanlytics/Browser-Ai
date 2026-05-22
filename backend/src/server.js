@@ -10,15 +10,18 @@ const authRoutes = require("./routes/auth");
 
 const app = express();
 
-// Connect to database
-connectRedis();
-connectDB();
-
 // Middleware
+app.use(
+  cors({
+    origin: ["http://localhost:4173", "http://127.0.0.1:4173"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  }),
+);
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 app.use(cookieParser());
 
 // Routes
@@ -26,8 +29,21 @@ app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Connect to database
+async function startServer() {
+  try {
+    await connectRedis();
+    await connectDB();
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 module.exports = app;

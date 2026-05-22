@@ -66,7 +66,7 @@ async function register(req, res) {
       JSON.stringify({
         name,
         email,
-        password: hashedPassword,
+        password,
         otp,
       }),
 
