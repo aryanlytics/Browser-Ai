@@ -56,6 +56,7 @@ export default function SignUp() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   // ── Submit ──────────────────────────────────────────────────
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Block submit if anything is invalid
