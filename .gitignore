@@ -1,27 +1,71 @@
-# Dependency directories (ignore at all levels)
+# ──────────────────────────────────────────────
+# Dependencies
+# ──────────────────────────────────────────────
 node_modules/
 **/node_modules/
 
+# ──────────────────────────────────────────────
 # Production builds
+# ──────────────────────────────────────────────
 dist/
 **/dist/
 dist-ssr/
 **/dist-ssr/
+build/
+**/build/
 
-# Environment files
+# ──────────────────────────────────────────────
+# Environment variables
+# ──────────────────────────────────────────────
 .env
-.env.development
-.env.production
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
-# OS files
-.DS_Store
-Thumbs.db
-
-# Log files
+# ──────────────────────────────────────────────
+# Logs
+# ──────────────────────────────────────────────
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
+yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# ──────────────────────────────────────────────
+# OS files
+# ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ──────────────────────────────────────────────
+# Editor / IDE
+# ──────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+
+# ──────────────────────────────────────────────
+# Testing & coverage
+# ──────────────────────────────────────────────
+coverage/
+**/coverage/
+.nyc_output/
+
+# ──────────────────────────────────────────────
+# Misc
+# ──────────────────────────────────────────────
+*.local
+.cache/
+.temp/
+.tmp/
