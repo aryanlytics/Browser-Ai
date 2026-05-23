@@ -311,7 +311,7 @@ export default function SignUp() {
                   value={form.password}
                   onChange={handleChange}
                   className={`
-        bg-white/4 text-white h-11 rounded-xl pr-11
+         bg-white/4 text-white h-11 rounded-xl pl-10
         ${
           (form.password && !isValidPassword(form.password)) || errors.password
             ? "border-red-500 focus:border-red-500"
@@ -319,6 +319,7 @@ export default function SignUp() {
         }
       `}
                 />
+                
 
                 <button
                   type="button"
@@ -360,7 +361,7 @@ export default function SignUp() {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   className={`
-        bg-white/4 text-white h-11 rounded-xl pr-11
+        bg-white/4 text-white h-11 rounded-xl pl-10
         ${
           (form.confirmPassword &&
             !isValidConfirmPassword(form.confirmPassword, form.password)) ||
