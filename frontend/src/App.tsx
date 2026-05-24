@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import {
+  Switch,
+  Route,
+  Router as WouterRouter,
+  useLocation,
+  Redirect,
+} from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Toaster } from "./components/ui/toaster";
 import { TooltipProvider } from "./components/ui/tooltip";
-import { AuthProvider } from "./hooks/use-auth";
+import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { ScrollProgress } from "./components/scroll-progress";
 import { PageLoader } from "./components/page-loader";
 
@@ -25,8 +31,34 @@ const pageVariants = {
   },
 };
 
+// ─────────────────────────────────────────────
+// Protected Route
+// Blocks access if not authenticated.
+// Shows PageLoader while auth check is in flight.
+// ─────────────────────────────────────────────
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) return <PageLoader />;
+  if (!user) return <Redirect to="/sign-in" />;
+  return <>{children}</>;
+}
+
+// ─────────────────────────────────────────────
+// Public-only Route
+// Bounces already-logged-in users to dashboard.
+// ─────────────────────────────────────────────
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+
+  if (loading) return <PageLoader />;
+  if (user) return <Redirect to="/dashboard" />;
+  return <>{children}</>;
+}
+
 function AnimatedRoutes() {
   const [location] = useLocation();
+
   return (
     <AnimatePresence>
       <motion.div
@@ -38,10 +70,31 @@ function AnimatedRoutes() {
       >
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/sign-in" component={SignIn} />
-          <Route path="/sign-up" component={SignUp} />
-          <Route path="/verify-otp" component={VerifyOtp} />
-          <Route path="/dashboard" component={Dashboard} />
+
+          <Route path="/sign-in">
+            <PublicOnlyRoute>
+              <SignIn />
+            </PublicOnlyRoute>
+          </Route>
+
+          <Route path="/sign-up">
+            <PublicOnlyRoute>
+              <SignUp />
+            </PublicOnlyRoute>
+          </Route>
+
+          <Route path="/verify-otp">
+            <PublicOnlyRoute>
+              <VerifyOtp />
+            </PublicOnlyRoute>
+          </Route>
+
+          <Route path="/dashboard">
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </Route>
+
           <Route component={NotFound} />
         </Switch>
       </motion.div>
@@ -52,7 +105,7 @@ function AnimatedRoutes() {
 function App() {
   const [loaderDone, setLoaderDone] = useState(false);
 
-  // Only show loader on first visit (not on every route change)
+  // Show page loader only on first visit per session
   const [showLoader] = useState(() => {
     if (typeof window === "undefined") return false;
     const seen = sessionStorage.getItem("browseai_loaded");

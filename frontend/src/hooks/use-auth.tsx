@@ -1,5 +1,5 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
-import { useLocation } from "wouter";
+import { createContext, useContext, useState, useEffect } from "react";
+import axios from "axios";
 
 interface User {
   id: string;
@@ -8,71 +8,73 @@ interface User {
 }
 
 interface AuthContextType {
-  token: string | null;
   user: User | null;
-  login: (token: string) => void;
-  logout: () => void;
-  isLoading: boolean;
+  accessToken: string | null;
+  loading: boolean;
+  setUser: (user: User | null) => void;
+  setAccessToken: (token: string | null) => void;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("browseai_token"));
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [, setLocation] = useLocation();
+  const [accessToken, setAccessToken] = useState<string | null>(
+    () => sessionStorage.getItem("browseai_access_token") || null
+  );
+  const [loading, setLoading] = useState(true);
 
+  // On mount: hit /refresh to restore session from httpOnly cookie
   useEffect(() => {
-    if (token) {
-      // Fetch user profile
-      fetch("/api/user/me", {
-        headers: { Authorization: `Bearer ${token}` }
+    axios
+      .post("/api/auth/refresh", {}, { withCredentials: true })
+      .then((res) => {
+        setUser(res.data.user);
+        setAccessToken(res.data.accessToken);
+        sessionStorage.setItem("browseai_access_token", res.data.accessToken);
       })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.id) {
-            setUser(data);
-          } else {
-            // Invalid token
-            setToken(null);
-            localStorage.removeItem("browseai_token");
-          }
-        })
-        .catch(() => {
-          // Assume valid but offline for now, or just fail
-          setToken(null);
-          localStorage.removeItem("browseai_token");
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
+      .catch(() => {
+        setUser(null);
+        setAccessToken(null);
+        sessionStorage.removeItem("browseai_access_token");
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Attach accessToken to every outgoing request automatically
+  useEffect(() => {
+    const id = axios.interceptors.request.use((config) => {
+      const token = sessionStorage.getItem("browseai_access_token");
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+      return config;
+    });
+    return () => axios.interceptors.request.eject(id);
+  }, []);
+
+  const logout = async () => {
+    try {
+      await axios.post("/api/auth/logout", {}, { withCredentials: true });
+    } catch {
+      // Clear client state regardless of server response
+    } finally {
+      setUser(null);
+      setAccessToken(null);
+      sessionStorage.removeItem("browseai_access_token");
     }
-  }, [token]);
-
-  const login = (newToken: string) => {
-    localStorage.setItem("browseai_token", newToken);
-    setToken(newToken);
-  };
-
-  const logout = () => {
-    localStorage.removeItem("browseai_token");
-    setToken(null);
-    setUser(null);
-    setLocation("/");
   };
 
   return (
-    <AuthContext.Provider value={{ token, user, login, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, setUser, accessToken, setAccessToken, loading, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+export function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
 }
