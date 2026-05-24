@@ -9,7 +9,6 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
 export default function VerifyOtp() {
@@ -44,9 +43,11 @@ export default function VerifyOtp() {
 
         description: res.data.message,
       });
-
-      
+      // In handleVerify, after successful response:
+      sessionStorage.setItem("browseai_access_token", res.data.accessToken);
+      sessionStorage.removeItem("browseai_pending_email");
       setLocation("/dashboard");
+
     } catch (err) {
       toast({
         title: "Verification failed",

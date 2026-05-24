@@ -185,10 +185,7 @@ async function register(req, res) {
 
     res.status(200).json({
       success: true,
-
       message: "OTP sent successfully to your email",
-
-      email,
     });
   } catch (error) {
     console.error(error);
@@ -236,11 +233,27 @@ async function verifyOTP(req, res) {
 
     // Validate the OTP
     if (userData.otp !== otp) {
+      const attemptsKey = `otp_attempts:${email}`;
+      const attempts = await redisClient.incr(attemptsKey);
+      if (attempts === 1) await redisClient.expire(attemptsKey, 120);
+
+      if (attempts >= 5) {
+        await redisClient.del(`register:${email}`);
+        await redisClient.del(`otp_cooldown:${email}`);
+        await redisClient.del(attemptsKey);
+        return res.status(429).json({
+          success: false,
+          message: "Too many invalid attempts. Please sign up again.",
+        });
+      }
+
       return res.status(400).json({
         success: false,
-        message: "Invalid verification code",
+        message: `Invalid verification code. Attempts left: ${5 - attempts}`,
       });
     }
+
+    await redisClient.del(`otp_attempts:${email}`);
 
  
 
@@ -254,24 +267,33 @@ async function verifyOTP(req, res) {
       lastLogin: Date.now(),
     });
 
-    // Generate JWT token
-    const token = jwt.sign({ id: newUser._id }, config.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
     // Clean up temporary data in Redis
     await redisClient.del(`register:${email}`);
     await redisClient.del(`otp_cooldown:${email}`);
 
+    // Generate JWT token
+    const accessToken = jwt.sign({ id: newUser._id }, config.JWT_ACCESS_SECRET, {
+      expiresIn: "15m",
+    });
+
+    const refreshToken = jwt.sign({ id: newUser._id }, config.JWT_REFRESH_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+
+    
+
     res.status(200).json({
       success: true,
       message: "Email verified successfully",
-      token,
-      user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-      },
+      accessToken,
     });
   } catch (error) {
     console.error(error);
@@ -454,11 +476,11 @@ async function login(req, res) {
     user.lastLogin = Date.now();
     await user.save();
 
-    const accessToken = jwt.sign({ id: user._id }, config.JWT_SECRET, {
+    const accessToken = jwt.sign({ id: user._id }, config.JWT_ACCESS_SECRET, {
       expiresIn: "15m",
     });
 
-    const refreshToken = jwt.sign({ id: user._id }, config.JWT_SECRET, {
+    const refreshToken = jwt.sign({ id: user._id }, config.JWT_REFRESH_SECRET, {
       expiresIn: "7d",
     });
 
@@ -491,4 +513,37 @@ async function login(req, res) {
 
 
 
-module.exports = { register, login, verifyOTP, resendOTP };
+
+
+async function logout(req, res) {
+  res.clearCookie("refreshToken", { httpOnly: true, secure: true, sameSite: "strict" });
+  res.status(200).json({ success: true, message: "Logged out" });
+}
+
+async function refresh(req, res) {
+  const token = req.cookies.refreshToken;
+  if (!token) return res.status(401).json({ success: false, message: "No refresh token" });
+  
+  try {
+    const decoded = jwt.verify(token, config.JWT_REFRESH_SECRET);
+    const user = await registerModel.findById(decoded.id);
+    if (!user) return res.status(401).json({ success: false, message: "User not found" });
+    
+    const accessToken = jwt.sign({ id: user._id }, config.JWT_ACCESS_SECRET, { expiresIn: "15m" });
+    
+    res.status(200).json({
+      success: true,
+      accessToken,
+      user: { id: user._id, name: user.name, email: user.email }
+    });
+  } catch {
+    res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
+  }
+}
+
+
+module.exports = { register, login, verifyOTP, resendOTP, refresh, logout };
+
+
+
+
