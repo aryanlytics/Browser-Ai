@@ -14,56 +14,60 @@ import { SiGoogle } from "react-icons/si";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import axios from "axios";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import girlAgent from "../assets/ai-agent-girl-nobg.png";
+
+const isValidEmail = (v) => {
+  const val = v.trim();
+  if (!val) return false;
+  if (/\s/.test(v)) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+};
+
+const isValidPassword = (v) => v.trim().length >= 8;
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
-  const { login } = useAuth();
+  const [errors, setErrors] = useState({});
+
+  const { setUser, setAccessToken } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [errors, setErrors] = useState({});
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const newErrors = {};
-
-    if (!isValidEmail(form.email)) {
-      newErrors.email = "Enter a valid email address";
-    }
-
-    if (!isValidPassword(form.password)) {
-      newErrors.password = "Password must be at least 8 characters";
-    }
-
+    if (!isValidEmail(form.email)) newErrors.email = "Enter a valid email address";
+    if (!isValidPassword(form.password)) newErrors.password = "Password must be at least 8 characters";
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
-    // stop submit if errors exist
-    if (Object.keys(newErrors).length > 0) {
-      return;
-    }
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Login failed");
-      login(json.token);
+      const { data } = await axios.post(
+        "/api/auth/login",
+        { email: form.email, password: form.password },
+        { withCredentials: true }
+      );
+
+      // Store accessToken + set user in auth context
+      sessionStorage.setItem("browseai_access_token", data.accessToken);
+      setAccessToken(data.accessToken);
+      setUser(data.user);
+
       setLocation("/dashboard");
     } catch (err) {
       toast({
         title: "Login failed",
-        description:
-          err instanceof Error ? err.message : "Something went wrong",
+        description: err.response?.data?.message || err.message || "Something went wrong",
         variant: "destructive",
       });
     } finally {
@@ -73,22 +77,6 @@ export default function SignIn() {
 
   const handleGoogle = () => {
     window.location.href = "/api/auth/google";
-  };
-
-  const normalizeName = (v) => v.trim().replace(/\s+/g, " ");
-
-  const isValidEmail = (v) => {
-    const val = v.trim();
-    if (!val) return false;
-
-    // no spaces allowed anywhere
-    if (/\s/.test(v)) return false;
-
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-  };
-
-  const isValidPassword = (v) => {
-    return v.trim().length >= 8;
   };
 
   return (
@@ -199,10 +187,8 @@ export default function SignIn() {
               >
                 Email
               </Label>
-
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
-
                 <Input
                   id="email"
                   name="email"
@@ -210,17 +196,13 @@ export default function SignIn() {
                   placeholder="alex@gmail.com"
                   value={form.email}
                   onChange={handleChange}
-                  className={`
-        pl-10 bg-white/4 text-white h-11 rounded-xl
-        ${
-          (form.email && !isValidEmail(form.email)) || errors.email
-            ? "border-red-500 focus:border-red-500"
-            : "border-white/8 focus:border-primary/50"
-        }
-      `}
+                  className={`pl-10 bg-white/4 text-white h-11 rounded-xl ${
+                    (form.email && !isValidEmail(form.email)) || errors.email
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-white/8 focus:border-primary/50"
+                  }`}
                 />
               </div>
-
               {((form.email && !isValidEmail(form.email)) || errors.email) && (
                 <p className="text-red-500 text-xs">
                   {errors.email || "Invalid email (no spaces allowed)"}
@@ -245,8 +227,8 @@ export default function SignIn() {
                   Forgot?
                 </button>
               </div>
-
               <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
                 <Input
                   id="password"
                   name="password"
@@ -254,31 +236,21 @@ export default function SignIn() {
                   placeholder="Min. 8 characters"
                   value={form.password}
                   onChange={handleChange}
-                  className={`
-        bg-white/4 text-white h-11 rounded-xl pr-11
-        ${
-          (form.password && !isValidPassword(form.password)) || errors.password
-            ? "border-red-500 focus:border-red-500"
-            : "border-white/8 focus:border-primary/50"
-        }
-      `}
+                  className={`pl-10 bg-white/4 text-white h-11 rounded-xl pr-11 ${
+                    (form.password && !isValidPassword(form.password)) || errors.password
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-white/8 focus:border-primary/50"
+                  }`}
                 />
-
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-
-              {((form.password && !isValidPassword(form.password)) ||
-                errors.password) && (
+              {((form.password && !isValidPassword(form.password)) || errors.password) && (
                 <p className="text-red-500 text-xs">
                   {errors.password || "Password must be at least 8 characters"}
                 </p>
@@ -292,14 +264,9 @@ export default function SignIn() {
               className="h-11 mt-1 bg-primary hover:bg-primary/90 text-white font-semibold rounded-xl gap-2 group shadow-lg shadow-primary/20"
             >
               {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Signing in...
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
               ) : (
-                <>
-                  Sign in{" "}
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </>
+                <>Sign in <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>
               )}
             </Button>
           </form>
