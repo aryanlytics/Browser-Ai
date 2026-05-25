@@ -193,6 +193,7 @@ export default function SignIn() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="alex@gmail.com"
                   value={form.email}
                   onChange={handleChange}
@@ -234,7 +235,7 @@ export default function SignIn() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Min. 8 characters"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   value={form.password}
                   onChange={handleChange}
                   className={`pl-10 bg-white/4 text-white h-11 rounded-xl pr-11 ${
