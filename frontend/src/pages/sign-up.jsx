@@ -270,6 +270,7 @@ export default function SignUp() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   placeholder="alex@gmail.com"
                   value={form.email}
                   onChange={handleChange}
@@ -306,6 +307,7 @@ export default function SignUp() {
                 <Input
                   id="password"
                   name="password"
+                  autoComplete="new-password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Min. 8 characters"
                   value={form.password}
@@ -356,6 +358,7 @@ export default function SignUp() {
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
+                  autoComplete="new-password"
                   type={showConfirm ? "text" : "password"}
                   placeholder="Repeat password"
                   value={form.confirmPassword}
