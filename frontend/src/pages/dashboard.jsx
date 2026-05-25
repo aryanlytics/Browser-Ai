@@ -69,11 +69,7 @@ export default function Dashboard() {
   const [transcript, setTranscript] = useState("");
   const [agentResponse, setAgentResponse] = useState("");
 
-  useEffect(() => {
-    if (!loading && !accessToken) {
-      setLocation("/sign-in");
-    }
-  }, [accessToken, loading, setLocation]);
+  
 
   const toggleListening = () => {
     if (isListening) {
