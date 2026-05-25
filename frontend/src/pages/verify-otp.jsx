@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 export default function VerifyOtp() {
+  const { setAccessToken } = useAuth();
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -43,6 +44,15 @@ export default function VerifyOtp() {
 
         description: res.data.message,
       });
+      // You store in sessionStorage but never update context
+      
+      // Fix — add this:
+ 
+      // ...
+      setAccessToken(res.data.accessToken); // ← syncs context so ProtectedRoute sees it
+      
+
+
       // In handleVerify, after successful response:
       sessionStorage.setItem("browseai_access_token", res.data.accessToken);
       sessionStorage.removeItem("browseai_pending_email");
