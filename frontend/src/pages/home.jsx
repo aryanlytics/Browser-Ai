@@ -151,7 +151,7 @@ const TESTIMONIALS = [
 ];
 
 export default function Home() {
-  const { token, isLoading } = useAuth();
+  const { accessToken, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [commandIdx, setCommandIdx] = useState(0);
   const heroRef = useRef(null);
@@ -159,8 +159,8 @@ export default function Home() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (token && !isLoading) setLocation("/dashboard");
-  }, [token, isLoading, setLocation]);
+    if (accessToken && !loading) setLocation("/dashboard");
+  }, [accessToken, loading, setLocation]);
 
   // Rotate commands
   useEffect(() => {
@@ -325,7 +325,7 @@ export default function Home() {
     };
   }, []);
 
-  if (isLoading) return null;
+  if (loading) return null;
 
   return (
     <div className="bg-background text-foreground overflow-x-hidden">

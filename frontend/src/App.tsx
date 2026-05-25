@@ -37,10 +37,10 @@ const pageVariants = {
 // Shows PageLoader while auth check is in flight.
 // ─────────────────────────────────────────────
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { accessToken, loading } = useAuth();
 
   if (loading) return <PageLoader />;
-  if (!user) return <Redirect to="/sign-in" />;
+  if (!accessToken) return <Redirect to="/sign-in" />;
   return <>{children}</>;
 }
 
@@ -49,10 +49,10 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Bounces already-logged-in users to dashboard.
 // ─────────────────────────────────────────────
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { accessToken, loading } = useAuth();
 
   if (loading) return <PageLoader />;
-  if (user) return <Redirect to="/dashboard" />;
+  if (accessToken) return <Redirect to="/dashboard" />;
   return <>{children}</>;
 }
 

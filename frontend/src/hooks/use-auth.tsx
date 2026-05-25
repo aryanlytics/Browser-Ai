@@ -1,73 +1,157 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import axios from "axios";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
 interface AuthContextType {
-  user: User | null;
   accessToken: string | null;
   loading: boolean;
-  setUser: (user: User | null) => void;
   setAccessToken: (token: string | null) => void;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// ─────────────────────────────────────────────
+// Decode JWT expiry without a library
+// ─────────────────────────────────────────────
+function getTokenExpiry(token: string): number | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp ? payload.exp * 1000 : null; // convert to ms
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpired(token: string): boolean {
+  const exp = getTokenExpiry(token);
+  if (!exp) return true;
+  return Date.now() >= exp - 30_000; // treat as expired 30s early
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(
+  const [accessToken, setAccessTokenState] = useState<string | null>(
     () => sessionStorage.getItem("browseai_access_token") || null
   );
   const [loading, setLoading] = useState(true);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // On mount: hit /refresh to restore session from httpOnly cookie
-  useEffect(() => {
-    axios
-      .post("/api/auth/refresh", {}, { withCredentials: true })
-      .then((res) => {
-        setUser(res.data.user);
-        setAccessToken(res.data.accessToken);
-        sessionStorage.setItem("browseai_access_token", res.data.accessToken);
-      })
-      .catch(() => {
-        setUser(null);
-        setAccessToken(null);
-        sessionStorage.removeItem("browseai_access_token");
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  // Attach accessToken to every outgoing request automatically
-  useEffect(() => {
-    const id = axios.interceptors.request.use((config) => {
-      const token = sessionStorage.getItem("browseai_access_token");
-      if (token) config.headers.Authorization = `Bearer ${token}`;
-      return config;
-    });
-    return () => axios.interceptors.request.eject(id);
-  }, []);
-
-  const logout = async () => {
-    try {
-      await axios.post("/api/auth/logout", {}, { withCredentials: true });
-    } catch {
-      // Clear client state regardless of server response
-    } finally {
-      setUser(null);
-      setAccessToken(null);
+  // ─────────────────────────────────────────
+  // Wrap setter to always sync sessionStorage
+  // ─────────────────────────────────────────
+  const setAccessToken = (token: string | null) => {
+    setAccessTokenState(token);
+    if (token) {
+      sessionStorage.setItem("browseai_access_token", token);
+    } else {
       sessionStorage.removeItem("browseai_access_token");
     }
   };
 
+  // ─────────────────────────────────────────
+  // Call /refresh and return new token
+  // ─────────────────────────────────────────
+  const doRefresh = async (): Promise<string | null> => {
+    try {
+      const { data } = await axios.post(
+        "/api/auth/refresh",
+        {},
+        { withCredentials: true }
+      );
+      setAccessToken(data.accessToken);
+      scheduleRefresh(data.accessToken);
+      return data.accessToken;
+    } catch {
+      setAccessToken(null);
+      return null;
+    }
+  };
+
+  // ─────────────────────────────────────────
+  // Schedule silent refresh 1 minute before expiry
+  // ─────────────────────────────────────────
+  const scheduleRefresh = (token: string) => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    const exp = getTokenExpiry(token);
+    if (!exp) return;
+    const delay = exp - Date.now() - 60_000; // 1 min before expiry
+    if (delay <= 0) {
+      doRefresh();
+      return;
+    }
+    refreshTimerRef.current = setTimeout(() => doRefresh(), delay);
+  };
+
+  // ─────────────────────────────────────────
+  // On mount: use existing token if still valid,
+  // otherwise call /refresh once from cookie
+  // ─────────────────────────────────────────
+  useEffect(() => {
+    const existing = sessionStorage.getItem("browseai_access_token");
+
+    if (existing && !isTokenExpired(existing)) {
+      // Token is valid — trust it, skip the API call
+      setAccessTokenState(existing);
+      scheduleRefresh(existing);
+      setLoading(false);
+      return;
+    }
+
+    // Expired or missing — try cookie-based refresh
+    doRefresh().finally(() => setLoading(false));
+
+    return () => {
+      if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    };
+  }, []);
+
+  // ─────────────────────────────────────────
+  // Request interceptor — attach token
+  // ─────────────────────────────────────────
+  useEffect(() => {
+    const reqId = axios.interceptors.request.use((config) => {
+      const token = sessionStorage.getItem("browseai_access_token");
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+      return config;
+    });
+
+    // ─────────────────────────────────────────
+    // Response interceptor — silent retry on 401
+    // ─────────────────────────────────────────
+    const resId = axios.interceptors.response.use(
+      (res) => res,
+      async (err) => {
+        const original = err.config;
+        if (err.response?.status === 401 && !original._retry) {
+          original._retry = true;
+          const newToken = await doRefresh();
+          if (newToken) {
+            original.headers.Authorization = `Bearer ${newToken}`;
+            return axios(original); // retry original request
+          }
+        }
+        return Promise.reject(err);
+      }
+    );
+
+    return () => {
+      axios.interceptors.request.eject(reqId);
+      axios.interceptors.response.eject(resId);
+    };
+  }, []);
+
+  const logout = async () => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    try {
+      await axios.post("/api/auth/logout", {}, { withCredentials: true });
+    } catch {
+      // clear client state regardless
+    } finally {
+      setAccessToken(null);
+    }
+  };
+
   return (
-    <AuthContext.Provider
-      value={{ user, setUser, accessToken, setAccessToken, loading, logout }}
-    >
+    <AuthContext.Provider value={{ accessToken, setAccessToken, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

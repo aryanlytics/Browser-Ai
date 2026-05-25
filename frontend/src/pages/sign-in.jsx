@@ -34,7 +34,6 @@ export default function SignIn() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
 
-  const { setUser, setAccessToken } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -52,16 +51,13 @@ export default function SignIn() {
 
     setIsLoading(true);
     try {
-      const { data } = await axios.post(
+      const res  = await axios.post(
         "/api/auth/login",
-        { email: form.email, password: form.password },
-        { withCredentials: true }
+        { email: form.email, password: form.password }
       );
 
-      // Store accessToken + set user in auth context
-      sessionStorage.setItem("browseai_access_token", data.accessToken);
-      setAccessToken(data.accessToken);
-      setUser(data.user);
+      // Store accessToken and set on session storage
+      sessionStorage.setItem("browseai_access_token", res.data.accessToken);
 
       setLocation("/dashboard");
     } catch (err) {

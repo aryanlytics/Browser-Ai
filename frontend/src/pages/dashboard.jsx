@@ -61,7 +61,7 @@ const taskIcons = {
 };
 
 export default function Dashboard() {
-  const { token, user, logout, isLoading } = useAuth();
+  const { accessToken, loading, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [agentState, setAgentState] = useState("idle");
   const [isListening, setIsListening] = useState(false);
@@ -70,10 +70,10 @@ export default function Dashboard() {
   const [agentResponse, setAgentResponse] = useState("");
 
   useEffect(() => {
-    if (!isLoading && !token) {
+    if (!loading && !accessToken) {
       setLocation("/sign-in");
     }
-  }, [token, isLoading, setLocation]);
+  }, [accessToken, loading, setLocation]);
 
   const toggleListening = () => {
     if (isListening) {
@@ -110,7 +110,7 @@ export default function Dashboard() {
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -118,14 +118,7 @@ export default function Dashboard() {
     );
   }
 
-  const initials = user?.name
-    ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : "U";
+  const initials = "U";
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
@@ -164,7 +157,7 @@ export default function Dashboard() {
               </AvatarFallback>
             </Avatar>
             <span className="text-sm text-white/80 hidden sm:block">
-              {user?.name || "User"}
+              {"User"}
             </span>
           </div>
           <Button
