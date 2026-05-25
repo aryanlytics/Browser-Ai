@@ -29,6 +29,7 @@ const isValidEmail = (v) => {
 const isValidPassword = (v) => v.trim().length >= 8;
 
 export default function SignIn() {
+  const { setAccessToken } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
@@ -57,6 +58,9 @@ export default function SignIn() {
       );
 
       // Store accessToken and set on session storage
+    
+      // ...
+      setAccessToken(res.data.accessToken)
       sessionStorage.setItem("browseai_access_token", res.data.accessToken);
 
       setLocation("/dashboard");
@@ -230,6 +234,7 @@ export default function SignIn() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Min. 8 characters"
+                  autoComplete="new-password"
                   value={form.password}
                   onChange={handleChange}
                   className={`pl-10 bg-white/4 text-white h-11 rounded-xl pr-11 ${
