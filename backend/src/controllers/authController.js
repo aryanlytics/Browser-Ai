@@ -494,12 +494,6 @@ async function login(req, res) {
     res.status(200).json({
       success: true,
       message: "Login successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        lastLogin: user.lastLogin,
-      },
       accessToken,
     });
   } catch (error) {
@@ -534,7 +528,6 @@ async function refresh(req, res) {
     res.status(200).json({
       success: true,
       accessToken,
-      user: { id: user._id, name: user.name, email: user.email }
     });
   } catch {
     res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
