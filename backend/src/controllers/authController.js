@@ -294,6 +294,11 @@ async function verifyOTP(req, res) {
       success: true,
       message: "Email verified successfully",
       accessToken,
+      user: {
+    id: newUser._id,
+    name: newUser.name,
+    email: newUser.email,
+  }
     });
   } catch (error) {
     console.error(error);
