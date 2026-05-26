@@ -44,7 +44,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// ─────────────────────────────────────────────
 // Public-only Route
 // Bounces already-logged-in users to dashboard.
 // ─────────────────────────────────────────────
