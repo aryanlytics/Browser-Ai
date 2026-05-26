@@ -31,8 +31,7 @@ const pageVariants = {
   },
 };
 
-// ─────────────────────────────────────────────
-// Protected Route
+
 // Blocks access if not authenticated.
 // Shows PageLoader while auth check is in flight.
 // ─────────────────────────────────────────────
