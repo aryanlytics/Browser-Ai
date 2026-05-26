@@ -44,7 +44,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 
-// Bounces already-logged-in users to dashboard.
 
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { accessToken, loading } = useAuth();
