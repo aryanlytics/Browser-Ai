@@ -33,7 +33,7 @@ const pageVariants = {
 
 
 
-// Shows PageLoader while auth check is in flight.
+
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { accessToken, loading } = useAuth();
