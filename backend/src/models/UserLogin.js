@@ -33,4 +33,4 @@ userLoginSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 const loginModel = mongoose.model("LoginUser", userLoginSchema);
-module.exports = log
+module.exports = lo
