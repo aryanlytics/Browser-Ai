@@ -3,7 +3,7 @@ import { gsap } from "gsap";
 import { Mic } from "lucide-react";
 
 interface PageLoaderProps {
-  onComplete: () => void;
+  onComplete?: () => void;
 }
 
 export function PageLoader({ onComplete }: PageLoaderProps) {
