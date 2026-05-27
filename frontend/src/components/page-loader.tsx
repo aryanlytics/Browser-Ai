@@ -19,7 +19,7 @@ export function PageLoader({ onComplete }: PageLoaderProps) {
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         onComplete: () => {
-          onComplete();
+          onComplete?.();
         },
       });
 
